@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Sidebar } from './Sidebar';
+import { Sidebar } from '@/components/layout/Sidebar';
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (

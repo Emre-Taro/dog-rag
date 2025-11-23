@@ -1,4 +1,4 @@
-import InputPage from '@/src/app/input/page';
+import InputPage from '@/app/input/page';
 
 export default function Home() {
   return <InputPage />;
