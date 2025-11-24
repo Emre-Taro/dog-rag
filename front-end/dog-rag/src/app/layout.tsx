@@ -1,6 +1,7 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { AppShell } from '../components/layout/Appshell';
+import { AppShell } from '@/components/layout/Appshell';
+import { DogProvider } from '@/contexts/DogContext';
 
 export const metadata: Metadata = {
   title: 'Dog Health RAG',
@@ -15,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className="bg-slate-950">
-        <AppShell>{children}</AppShell>
+        <DogProvider>
+          <AppShell>{children}</AppShell>
+        </DogProvider>
       </body>
     </html>
   );

@@ -9,6 +9,7 @@ const navItems = [
   { href: '/dashboard', label: '分析・レポート', icon: '📈' },
   { href: '/dog-profile', label: 'ペット管理', icon: '🐾' },
   { href: '/rag', label: 'AI相談', icon: '💬' },
+  { href: '/settings', label: '設定', icon: '⚙️' },
 ];
 
 export function Sidebar() {
