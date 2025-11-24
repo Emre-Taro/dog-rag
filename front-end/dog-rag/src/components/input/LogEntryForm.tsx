@@ -108,18 +108,44 @@ export function LogEntryForm({
       const url = logId ? `/api/logs/${logId}` : '/api/logs';
       const method = logId ? 'PATCH' : 'POST';
 
+      // Debug logging for food log type
+      if (logType === 'food') {
+        console.log('[LogEntryForm] Food log submission:', {
+          logId,
+          logType,
+          method,
+          url,
+          formData,
+          dogId,
+        });
+      }
+
+      const requestBody = {
+        dogId: dogId,
+        log_type: logType,
+        log_data: formData,
+        user_id: FIXED_USER_ID, // TODO: Get from auth
+      };
+
+      if (logType === 'food') {
+        console.log('[LogEntryForm] Food log request body:', JSON.stringify(requestBody, null, 2));
+      }
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          dogId: dogId,
-          log_type: logType,
-          log_data: formData,
-          user_id: FIXED_USER_ID, // TODO: Get from auth
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      if (logType === 'food') {
+        console.log('[LogEntryForm] Food log response status:', response.status);
+      }
+
       const result = await response.json();
+
+      if (logType === 'food') {
+        console.log('[LogEntryForm] Food log response:', result);
+      }
 
       if (result.success) {
         onSuccess();
@@ -133,6 +159,13 @@ export function LogEntryForm({
       const errorMsg = err?.message || 'An error occurred while saving';
       setError(errorMsg);
       console.error('Save exception:', err);
+      if (logType === 'food') {
+        console.error('[LogEntryForm] Food log save exception details:', {
+          error: err,
+          message: err?.message,
+          stack: err?.stack,
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -266,13 +299,25 @@ function FoodForm({ initialData, onSubmit, onCancel, loading }: any) {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    onSubmit({
+    console.log('[FoodForm] handleSubmit called with:', {
+      mealType,
+      amountGrams,
+      time,
+      eatenAmount,
+      comment,
+      initialData,
+    });
+    
+    const formData = {
       mealType,
       amountGrams: amountGrams ? parseFloat(amountGrams) : undefined,
       time: time || new Date().toISOString(),
       eatenAmount: eatenAmount || undefined,
       comment: comment || undefined,
-    });
+    };
+    
+    console.log('[FoodForm] Calling onSubmit with:', formData);
+    onSubmit(formData);
   };
 
   return (

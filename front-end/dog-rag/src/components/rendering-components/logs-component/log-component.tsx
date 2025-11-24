@@ -39,21 +39,45 @@ export function LogPage() {
 
     setLoading(true);
     try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      // Get today's date in UTC (start of day)
+      const now = new Date();
+      const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+      // Get tomorrow's date in UTC (start of day) - this is the end date (exclusive)
+      const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0));
+
+      const startDateStr = today.toISOString();
+      const endDateStr = tomorrow.toISOString();
+      
+      console.log('[fetchTodayLogs] Fetching logs:', {
+        dogId: selectedDogId,
+        startDate: startDateStr,
+        endDate: endDateStr,
+      });
 
       const response = await fetch(
-        `/api/logs?dog_id=${selectedDogId}&start_date=${today.toISOString()}&end_date=${tomorrow.toISOString()}&user_id=${FIXED_USER_ID}`
+        `/api/logs?dog_id=${selectedDogId}&start_date=${startDateStr}&end_date=${endDateStr}&user_id=${FIXED_USER_ID}`
       );
       const result = await response.json();
 
+      console.log('[fetchTodayLogs] Response:', {
+        success: result.success,
+        count: result.data?.length || 0,
+        logs: result.data?.map((log: DogLog) => ({
+          id: log.id,
+          type: log.log_type,
+          createdAt: log.created_at,
+        })) || [],
+      });
+
       if (result.success && result.data) {
         setTodayLogs(result.data);
+      } else {
+        console.error('[fetchTodayLogs] Failed to fetch logs:', result.error);
+        setTodayLogs([]);
       }
     } catch (error) {
       console.error('Error fetching today logs:', error);
+      setTodayLogs([]);
     } finally {
       setLoading(false);
     }
@@ -93,8 +117,9 @@ export function LogPage() {
     }
   };
 
-  const handleFormSuccess = () => {
-    fetchTodayLogs();
+  const handleFormSuccess = async () => {
+    console.log('[handleFormSuccess] Form submitted successfully, refreshing logs...');
+    await fetchTodayLogs();
     setShowForm(false);
     setFormLogType(null);
     setEditingLog(null);

@@ -59,15 +59,14 @@ export function RecordPage() {
       // Add date filter only if not "all" (9999)
       const days = parseInt(filterDays);
       if (days < 9999) {
-        // endDate: 今日の23時59分59秒（翌日の0時0分0秒として設定）
-        const endDate = new Date();
-        endDate.setHours(23, 59, 59, 999);
+        // Use UTC dates to avoid timezone issues
+        const now = new Date();
+        // endDate: 翌日の0時0分0秒（UTC、半開区間 [start, end) のため）
+        const endDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0));
         
-        // startDate: (今日 - days) の0時0分0秒
+        // startDate: (今日 - days) の0時0分0秒（UTC）
         // 例: 過去7日間 = 今日から6日前まで（今日を含めて7日間）
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - (days - 1)); // days - 1 で今日を含める
-        startDate.setHours(0, 0, 0, 0);
+        const startDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - (days - 1), 0, 0, 0, 0));
         
         url += `&start_date=${startDate.toISOString()}&end_date=${endDate.toISOString()}`;
       }

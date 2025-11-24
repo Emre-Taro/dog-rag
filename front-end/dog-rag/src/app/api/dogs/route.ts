@@ -7,10 +7,12 @@ import { FIXED_USER_ID } from '@/lib/constants';
 // GET /api/dogs - List all dogs for the current user
 export async function GET(req: Request) {
   try {
+    console.log('[GET /api/dogs] Request received');
     // TODO: Get user_id from authentication/session
     // For now, using a placeholder - in production, get from authenticated session
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('user_id') ? parseInt(searchParams.get('user_id')!) : FIXED_USER_ID;
+    console.log('[GET /api/dogs] userId:', userId);
 
     const result = await query(
       `SELECT 
@@ -37,6 +39,7 @@ export async function GET(req: Request) {
       updatedAt: new Date(row.updatedAt),
     }));
 
+    console.log('[GET /api/dogs] Returning', dogs.length, 'dogs');
     return NextResponse.json({ success: true, data: dogs });
   } catch (error) {
     console.error('Error fetching dogs:', error);
@@ -50,7 +53,9 @@ export async function GET(req: Request) {
 // POST /api/dogs - Create a new dog profile
 export async function POST(req: Request) {
   try {
+    console.log('[POST /api/dogs] Request received');
     const body = await req.json();
+    console.log('[POST /api/dogs] Request body:', JSON.stringify(body));
     
     // Validate input data
     try {
@@ -126,6 +131,7 @@ export async function POST(req: Request) {
       updatedAt: new Date(row.updatedAt),
     };
 
+    console.log('[POST /api/dogs] Dog created successfully:', newDog.id);
     return NextResponse.json({ success: true, data: newDog }, { status: 201 });
   } catch (error) {
     console.error('Error creating dog:', error);

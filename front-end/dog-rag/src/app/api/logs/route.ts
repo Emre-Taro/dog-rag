@@ -43,7 +43,7 @@ export async function GET(req: Request) {
       paramIndex++;
     }
     if (endDate) {
-      baseConditions.push(`"createdAt" <= $${paramIndex}`);
+      baseConditions.push(`"createdAt" < $${paramIndex}`);
       allParams.push(endDate);
       paramIndex++;
     }
@@ -146,7 +146,25 @@ export async function GET(req: Request) {
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
 
+    console.log('[GET /api/logs] Final SQL query:', finalQuery);
+    console.log('[GET /api/logs] Base conditions:', baseConditions);
+    console.log('[GET /api/logs] Final conditions:', finalConditions);
+    console.log('[GET /api/logs] Executing query with params:', {
+      paramCount: allParams.length,
+      params: allParams.map((p, i) => ({ index: i + 1, value: p, type: typeof p })),
+    });
+    
     const result = await query(finalQuery, allParams);
+
+    console.log('[GET /api/logs] Query result:', {
+      rowCount: result.rows.length,
+      firstRow: result.rows[0] ? {
+        id: result.rows[0].id,
+        dogId: result.rows[0].dogId,
+        log_type: result.rows[0].log_type,
+        created_at: result.rows[0].created_at,
+      } : null,
+    });
 
     // Get userId from DogProfile for each log (batch query for efficiency)
     const dogIds = [...new Set(result.rows.map(row => row.dogId))];
@@ -168,6 +186,15 @@ export async function GET(req: Request) {
         created_at: new Date(row.created_at),
         updated_at: row.updated_at ? new Date(row.updated_at) : new Date(row.created_at), // fallback to createdAt
       };
+    });
+
+    console.log('[GET /api/logs] Returning logs:', {
+      count: logs.length,
+      logs: logs.map(log => ({
+        id: log.id,
+        type: log.log_type,
+        createdAt: log.created_at.toISOString(),
+      })),
     });
 
     return NextResponse.json({ success: true, data: logs });
@@ -298,6 +325,13 @@ export async function POST(req: Request) {
       created_at: new Date(row.createdAt),
       updated_at: new Date(row.createdAt), // Most log tables don't have updatedAt
     };
+
+    console.log('[POST /api/logs] Log created successfully:', {
+      id: newLog.id,
+      dogId: newLog.dogId,
+      logType: newLog.log_type,
+      createdAt: newLog.created_at.toISOString(),
+    });
 
     return NextResponse.json({ success: true, data: newLog }, { status: 201 });
   } catch (error) {

@@ -18,7 +18,7 @@ export async function GET(req: Request) {
     startDate.setDate(startDate.getDate() - days);
 
     // Build WHERE clause
-    let whereClause = 'user_id = $1 AND created_at >= $2 AND created_at <= $3';
+    let whereClause = 'user_id = $1 AND created_at >= $2 AND created_at < $3';
     const params: any[] = [userId, startDate, endDate];
 
     if (dogId) {

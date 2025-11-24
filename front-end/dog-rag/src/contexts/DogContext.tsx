@@ -14,10 +14,36 @@ interface DogContextType {
 
 const DogContext = createContext<DogContextType | undefined>(undefined);
 
+const SELECTED_DOG_ID_KEY = 'selectedDogId';
+
 export function DogProvider({ children }: { children: ReactNode }) {
-  const [selectedDogId, setSelectedDogId] = useState<number | null>(null);
+  // Initialize from localStorage if available
+  const [selectedDogId, setSelectedDogIdState] = useState<number | null>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(SELECTED_DOG_ID_KEY);
+      if (saved) {
+        const id = parseInt(saved, 10);
+        if (!isNaN(id)) {
+          return id;
+        }
+      }
+    }
+    return null;
+  });
   const [selectedDog, setSelectedDog] = useState<DogProfile | null>(null);
   const [dogs, setDogs] = useState<DogProfile[]>([]);
+
+  // Wrapper to save to localStorage when dog ID changes
+  const setSelectedDogId = (id: number | null) => {
+    setSelectedDogIdState(id);
+    if (typeof window !== 'undefined') {
+      if (id !== null) {
+        localStorage.setItem(SELECTED_DOG_ID_KEY, String(id));
+      } else {
+        localStorage.removeItem(SELECTED_DOG_ID_KEY);
+      }
+    }
+  };
 
   const fetchDogs = async () => {
     try {
@@ -26,15 +52,25 @@ export function DogProvider({ children }: { children: ReactNode }) {
       const result = await response.json();
       if (result.success && result.data) {
         setDogs(result.data);
-        // Auto-select first dog if available and none selected
-        if (result.data.length > 0 && !selectedDogId) {
-          setSelectedDogId(result.data[0].id);
-          setSelectedDog(result.data[0]);
-        } else if (selectedDogId) {
-          // Update selected dog if it exists in the list
-          const dog = result.data.find((d: DogProfile) => d.id === selectedDogId);
-          if (dog) {
-            setSelectedDog(dog);
+        
+        // Try to restore saved dog ID, or select first dog if none saved
+        if (result.data.length > 0) {
+          if (selectedDogId) {
+            // Check if saved dog ID still exists in the list
+            const savedDog = result.data.find((d: DogProfile) => d.id === selectedDogId);
+            if (savedDog) {
+              // Restore saved dog
+              setSelectedDog(savedDog);
+            } else {
+              // Saved dog no longer exists, select first dog
+              console.log(`[DogContext] Saved dog ID ${selectedDogId} not found, selecting first dog`);
+              setSelectedDogId(result.data[0].id);
+              setSelectedDog(result.data[0]);
+            }
+          } else {
+            // No saved dog ID, select first dog
+            setSelectedDogId(result.data[0].id);
+            setSelectedDog(result.data[0]);
           }
         }
       }

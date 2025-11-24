@@ -37,7 +37,7 @@ export async function GET(req: Request) {
       paramIndex++;
     }
     if (endDate) {
-      baseConditions.push(`"createdAt" <= $${paramIndex}`);
+      baseConditions.push(`"createdAt" < $${paramIndex}`);
       allParams.push(endDate);
       paramIndex++;
     }
