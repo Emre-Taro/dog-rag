@@ -2,16 +2,22 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { validateDogProfile, ValidationError } from '@/lib/validation';
 import { DogProfile } from '@/types';
-import { FIXED_USER_ID } from '@/lib/constants';
+import { requireAuth } from '@/lib/auth';
 
 // GET /api/dogs - List all dogs for the current user
 export async function GET(req: Request) {
   try {
     console.log('[GET /api/dogs] Request received');
-    // TODO: Get user_id from authentication/session
-    // For now, using a placeholder - in production, get from authenticated session
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('user_id') ? parseInt(searchParams.get('user_id')!) : FIXED_USER_ID;
+    
+    // Require authentication
+    const auth = await requireAuth(req);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    const userId = auth.userId;
     console.log('[GET /api/dogs] userId:', userId);
 
     const result = await query(
@@ -70,8 +76,15 @@ export async function POST(req: Request) {
       throw validationError;
     }
 
-    // TODO: Get ownerId from authentication/session
-    const ownerId = body.ownerId ? parseInt(body.ownerId) : FIXED_USER_ID;
+    // Require authentication
+    const auth = await requireAuth(req);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    const ownerId = auth.userId;
     
     // Extract field names (support both camelCase and snake_case)
     const dogName = body.dogName || body.dog_name;

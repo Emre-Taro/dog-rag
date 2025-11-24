@@ -2,10 +2,21 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { validateDogProfile, ValidationError } from '@/lib/validation';
 import { DogProfile } from '@/types';
+import { requireAuth } from '@/lib/auth';
 
 // GET /api/dogs/[dogId] - Get a specific dog profile
-export async function GET(_req: Request, { params }: { params: Promise<{ dogId: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ dogId: string }> }) {
   try {
+    // Require authentication
+    const auth = await requireAuth(req);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    const userId = auth.userId;
+
     const { dogId } = await params;
 
     const result = await query(
@@ -13,13 +24,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ dogId: 
         id, "ownerId", "dogName", gender, age, height, weight, breed, personality, 
         "stageOfTraining", "createdAt", "updatedAt"
       FROM "DogProfile" 
-      WHERE id = $1`,
-      [parseInt(dogId)]
+      WHERE id = $1 AND "ownerId" = $2`,
+      [parseInt(dogId), userId]
     );
 
     if (result.rows.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'Dog profile not found' },
+        { success: false, error: 'Dog profile not found or access denied' },
         { status: 404 }
       );
     }
@@ -54,6 +65,16 @@ export async function GET(_req: Request, { params }: { params: Promise<{ dogId: 
 export async function PATCH(req: Request, { params }: { params: Promise<{ dogId: string }> }) {
   let updates: any;
   try {
+    // Require authentication
+    const auth = await requireAuth(req);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    const userId = auth.userId;
+
     const { dogId } = await params;
     updates = await req.json();
     
@@ -63,11 +84,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ dogId:
       return value;
     }));
 
-    // Check if dog exists
-    const checkResult = await query('SELECT * FROM "DogProfile" WHERE id = $1', [parseInt(dogId)]);
+    // Check if dog exists and belongs to user
+    const checkResult = await query('SELECT * FROM "DogProfile" WHERE id = $1 AND "ownerId" = $2', [parseInt(dogId), userId]);
     if (checkResult.rows.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'Dog profile not found' },
+        { success: false, error: 'Dog profile not found or access denied' },
         { status: 404 }
       );
     }
@@ -337,20 +358,30 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ dogId:
 }
 
 // DELETE /api/dogs/[dogId] - Delete a dog profile
-export async function DELETE(_req: Request, { params }: { params: Promise<{ dogId: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ dogId: string }> }) {
   try {
+    // Require authentication
+    const auth = await requireAuth(req);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    const userId = auth.userId;
+
     const { dogId } = await params;
 
-    // Check if dog exists
-    const checkResult = await query('SELECT id FROM "DogProfile" WHERE id = $1', [parseInt(dogId)]);
+    // Check if dog exists and belongs to user
+    const checkResult = await query('SELECT id FROM "DogProfile" WHERE id = $1 AND "ownerId" = $2', [parseInt(dogId), userId]);
     if (checkResult.rows.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'Dog profile not found' },
+        { success: false, error: 'Dog profile not found or access denied' },
         { status: 404 }
       );
     }
 
-    await query('DELETE FROM "DogProfile" WHERE id = $1', [parseInt(dogId)]);
+    await query('DELETE FROM "DogProfile" WHERE id = $1 AND "ownerId" = $2', [parseInt(dogId), userId]);
 
     return NextResponse.json({ success: true, message: 'Dog profile deleted successfully' });
   } catch (error) {

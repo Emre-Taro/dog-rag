@@ -1,14 +1,22 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { ActivityRecord, HealthIndicator } from '@/types';
-import { FIXED_USER_ID } from '@/lib/constants';
+import { requireAuth } from '@/lib/auth';
 
 // GET /api/dashboard/summary - Get dashboard summary data (activity records and health indicators)
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    // TODO: Get user_id from authentication/session
-    const userId = searchParams.get('user_id') ? parseInt(searchParams.get('user_id')!) : FIXED_USER_ID;
+    
+    // Require authentication
+    const auth = await requireAuth(req);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    const userId = auth.userId;
     const dogId = searchParams.get('dog_id') || null;
     const days = parseInt(searchParams.get('days') || '7');
 

@@ -3,7 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { LogType, LogData } from '@/types';
 import { Button } from '@/components/ui/Button';
-import { FIXED_USER_ID } from '@/lib/constants';
+import { useAuth, getAuthHeaders } from '@/contexts/AuthContext';
 
 interface LogEntryFormProps {
   logType: LogType;
@@ -22,6 +22,7 @@ export function LogEntryForm({
   initialData,
   logId,
 }: LogEntryFormProps) {
+  const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -124,7 +125,6 @@ export function LogEntryForm({
         dogId: dogId,
         log_type: logType,
         log_data: formData,
-        user_id: FIXED_USER_ID, // TODO: Get from auth
       };
 
       if (logType === 'food') {
@@ -133,7 +133,10 @@ export function LogEntryForm({
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(token),
+        },
         body: JSON.stringify(requestBody),
       });
 

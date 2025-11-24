@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useDog } from '@/contexts/DogContext';
+import { useAuth, getAuthHeaders } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { DogProfile } from '@/types';
 import Link from 'next/link';
-import { FIXED_USER_ID } from '@/lib/constants';
 
 export function DogProfilePage() {
   const { dogs, refreshDogs, selectedDogId, setSelectedDogId } = useDog();
+  const { token } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [editingDog, setEditingDog] = useState<DogProfile | null>(null);
   const [loading, setLoading] = useState(false);
@@ -22,7 +23,10 @@ export function DogProfilePage() {
     if (!confirm('このペットプロフィールを削除しますか？')) return;
 
     try {
-      const response = await fetch(`/api/dogs/${dogId.toString()}`, { method: 'DELETE' });
+      const response = await fetch(`/api/dogs/${dogId.toString()}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(token),
+      });
       const result = await response.json();
 
       if (result.success) {
@@ -197,6 +201,7 @@ function DogProfileForm({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -221,11 +226,11 @@ function DogProfileForm({
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          ownerId: FIXED_USER_ID, // TODO: Get from auth
-        }),
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(token),
+        },
+        body: JSON.stringify(formData),
       });
 
       const result = await response.json();

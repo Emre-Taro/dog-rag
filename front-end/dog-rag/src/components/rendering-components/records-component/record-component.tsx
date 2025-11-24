@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useDog } from '@/contexts/DogContext';
+import { useAuth, getAuthHeaders } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { LogEntryForm } from '@/components/input/LogEntryForm';
 import { DogLog, LogType } from '@/types';
 import Link from 'next/link';
-import { FIXED_USER_ID } from '@/lib/constants';
 
 const LOG_TYPE_LABELS: Record<LogType, string> = {
   toilet: '排泄',
@@ -34,6 +34,7 @@ const LOG_TYPE_EMOJIS: Record<LogType, string> = {
 
 export function RecordPage() {
   const { selectedDogId, selectedDog, dogs, setSelectedDogId } = useDog();
+  const { token } = useAuth();
   const [logs, setLogs] = useState<DogLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,7 +55,7 @@ export function RecordPage() {
 
     setLoading(true);
     try {
-      let url = `/api/logs?dog_id=${selectedDogId}&user_id=${FIXED_USER_ID}`;
+      let url = `/api/logs?dog_id=${selectedDogId}`;
       
       // Add date filter only if not "all" (9999)
       const days = parseInt(filterDays);
@@ -79,7 +80,9 @@ export function RecordPage() {
         url += `&search=${encodeURIComponent(searchQuery)}`;
       }
 
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: getAuthHeaders(token),
+      });
       const result = await response.json();
 
       if (result.success && result.data) {
@@ -105,13 +108,15 @@ export function RecordPage() {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
 
-      let url = `/api/logs/export?dog_id=${selectedDogId}&start_date=${startDate.toISOString()}&end_date=${endDate.toISOString()}&user_id=${FIXED_USER_ID}`;
+      let url = `/api/logs/export?dog_id=${selectedDogId}&start_date=${startDate.toISOString()}&end_date=${endDate.toISOString()}`;
       
       if (filterType !== 'all') {
         url += `&log_type=${filterType}`;
       }
 
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: getAuthHeaders(token),
+      });
       const blob = await response.blob();
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -137,7 +142,10 @@ export function RecordPage() {
 
     try {
       const url = logType ? `/api/logs/${logId}?log_type=${logType}` : `/api/logs/${logId}`;
-      const response = await fetch(url, { method: 'DELETE' });
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: getAuthHeaders(token),
+      });
       const result = await response.json();
 
       if (result.success) {

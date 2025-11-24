@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useDog } from '@/contexts/DogContext';
+import { useAuth, getAuthHeaders } from '@/contexts/AuthContext';
 import { QuickRecordButton } from '@/components/input/QuickRecordButton';
 import { LogEntryForm } from '@/components/input/LogEntryForm';
 import { Button } from '@/components/ui/Button';
 import { LogType, DogLog, LogData } from '@/types';
 import Link from 'next/link';
-import { FIXED_USER_ID } from '@/lib/constants';
 
 const QUICK_RECORD_TYPES: Array<{ label: string; emoji: string; type: LogType }> = [
   { label: '排泄', emoji: '💧', type: 'toilet' },
@@ -21,6 +21,7 @@ const QUICK_RECORD_TYPES: Array<{ label: string; emoji: string; type: LogType }>
 
 export function LogPage() {
   const { selectedDogId, selectedDog, dogs, setSelectedDogId } = useDog();
+  const { token } = useAuth();
   const [todayLogs, setTodayLogs] = useState<DogLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -55,7 +56,10 @@ export function LogPage() {
       });
 
       const response = await fetch(
-        `/api/logs?dog_id=${selectedDogId}&start_date=${startDateStr}&end_date=${endDateStr}&user_id=${FIXED_USER_ID}`
+        `/api/logs?dog_id=${selectedDogId}&start_date=${startDateStr}&end_date=${endDateStr}`,
+        {
+          headers: getAuthHeaders(token),
+        }
       );
       const result = await response.json();
 
@@ -101,7 +105,10 @@ export function LogPage() {
     setDeleteLoading(logId);
     try {
       const url = logType ? `/api/logs/${logId}?log_type=${logType}` : `/api/logs/${logId}`;
-      const response = await fetch(url, { method: 'DELETE' });
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: getAuthHeaders(token),
+      });
       const result = await response.json();
 
       if (result.success) {

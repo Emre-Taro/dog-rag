@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { validateLogData, ValidationError } from '@/lib/validation';
 import { DogLog, LogType, LogFilter } from '@/types';
-import { FIXED_USER_ID } from '@/lib/constants';
+import { requireAuth } from '@/lib/auth';
 import { getLogTableName, LOG_TABLE_MAP } from '@/lib/log-tables-simple';
 
 // GET /api/logs - Get logs with optional filters
@@ -10,8 +10,15 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     
-    // TODO: Get user_id from authentication/session
-    const userId = searchParams.get('user_id') ? parseInt(searchParams.get('user_id')!) : FIXED_USER_ID;
+    // Require authentication
+    const auth = await requireAuth(req);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    const userId = auth.userId;
     const dogId = searchParams.get('dog_id') || null;
     const logType = searchParams.get('log_type') as LogType | null;
     const startDate = searchParams.get('start_date') || null;
@@ -236,8 +243,15 @@ export async function POST(req: Request) {
       throw validationError;
     }
 
-    // TODO: Get userId from authentication/session
-    const userId = body.user_id ? parseInt(body.user_id) : FIXED_USER_ID;
+    // Require authentication
+    const auth = await requireAuth(req);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    const userId = auth.userId;
 
     // Check if dog exists and belongs to user
     const dogCheck = await query('SELECT id, "ownerId" FROM "DogProfile" WHERE id = $1 AND "ownerId" = $2', [

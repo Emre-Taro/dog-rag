@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useDog } from '@/contexts/DogContext';
+import { useAuth, getAuthHeaders } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { DashboardStats, ActivityRecord, HealthIndicator } from '@/types';
 import Link from 'next/link';
-import { FIXED_USER_ID } from '@/lib/constants';
 
 export function DashboardPage() {
   const { selectedDogId, selectedDog, dogs, setSelectedDogId } = useDog();
+  const { token } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [activityRecords, setActivityRecords] = useState<ActivityRecord[]>([]);
   const [healthIndicators, setHealthIndicators] = useState<HealthIndicator[]>([]);
@@ -28,7 +29,10 @@ export function DashboardPage() {
     try {
       // Fetch stats
       const statsResponse = await fetch(
-        `/api/dashboard/stats?dog_id=${selectedDogId}&days=${days}&user_id=${FIXED_USER_ID}`
+        `/api/dashboard/stats?dog_id=${selectedDogId}&days=${days}`,
+        {
+          headers: getAuthHeaders(token),
+        }
       );
       const statsResult = await statsResponse.json();
       if (statsResult.success) {
@@ -37,7 +41,10 @@ export function DashboardPage() {
 
       // Fetch summary
       const summaryResponse = await fetch(
-        `/api/dashboard/summary?dog_id=${selectedDogId}&days=${days}&user_id=${FIXED_USER_ID}`
+        `/api/dashboard/summary?dog_id=${selectedDogId}&days=${days}`,
+        {
+          headers: getAuthHeaders(token),
+        }
       );
       const summaryResult = await summaryResponse.json();
       if (summaryResult.success) {
@@ -59,8 +66,10 @@ export function DashboardPage() {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
 
-      const url = `/api/logs/export?dog_id=${selectedDogId}&start_date=${startDate.toISOString()}&end_date=${endDate.toISOString()}&user_id=${FIXED_USER_ID}`;
-      const response = await fetch(url);
+      const url = `/api/logs/export?dog_id=${selectedDogId}&start_date=${startDate.toISOString()}&end_date=${endDate.toISOString()}`;
+      const response = await fetch(url, {
+        headers: getAuthHeaders(token),
+      });
       const blob = await response.blob();
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
