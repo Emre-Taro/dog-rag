@@ -1,0 +1,267 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model BarkLog {
+  id         Int        @id @default(autoincrement())
+  dogId      Int
+  time       DateTime
+  period     DayPeriod?
+  before     String?
+  after      String?
+  difficulty Int
+  createdAt  DateTime   @default(now())
+  DogProfile DogProfile @relation(fields: [dogId], references: [id])
+}
+
+model CustomLog {
+  id         Int        @id @default(autoincrement())
+  dogId      Int
+  title      String
+  content    String
+  loggedAt   DateTime   @default(now())
+  createdAt  DateTime   @default(now())
+  DogProfile DogProfile @relation(fields: [dogId], references: [id])
+}
+
+model DogNote {
+  id         Int        @id @default(autoincrement())
+  dogId      Int
+  noteType   NoteType
+  date       DateTime
+  comment    String
+  createdAt  DateTime   @default(now())
+  DogProfile DogProfile @relation(fields: [dogId], references: [id])
+}
+
+model DogProfile {
+  id              Int           @id @default(autoincrement())
+  ownerId         Int
+  dogName         String
+  age             Int?
+  height          Float?
+  weight          Float?
+  breed           String?
+  personality     String?
+  stageOfTraining TrainingStage
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime
+  gender          String?       @default("MALE")
+  BarkLog         BarkLog[]
+  CustomLog       CustomLog[]
+  DogNote         DogNote[]
+  User            User          @relation(fields: [ownerId], references: [id])
+  FoodLog         FoodLog[]
+  PlayLog         PlayLog[]
+  SleepLog        SleepLog[]
+  ToiletLog       ToiletLog[]
+  WalkLog         WalkLog[]
+
+  weekSummaries   DogWeekSummary[]
+  weekTexts       DogWeekText[]
+}
+
+model FoodLog {
+  id          Int          @id @default(autoincrement())
+  dogId       Int
+  mealType    MealType
+  amountGrams Int?
+  time        DateTime
+  eatenAmount EatenAmount?
+  comment     String?
+  createdAt   DateTime     @default(now())
+  DogProfile  DogProfile   @relation(fields: [dogId], references: [id])
+}
+
+model PlayLog {
+  id         Int        @id @default(autoincrement())
+  dogId      Int
+  minutes    Int
+  playType   PlayType?
+  startedAt  DateTime?
+  comment    String?
+  createdAt  DateTime   @default(now())
+  DogProfile DogProfile @relation(fields: [dogId], references: [id])
+}
+
+model SleepLog {
+  id              Int        @id @default(autoincrement())
+  dogId           Int
+  durationMinutes Int
+  startedAt       DateTime?
+  comment         String?
+  createdAt       DateTime   @default(now())
+  DogProfile      DogProfile @relation(fields: [dogId], references: [id])
+}
+
+model ToiletLog {
+  id         Int           @id @default(autoincrement())
+  dogId      Int
+  type       ToiletType
+  time       DateTime
+  success    Boolean
+  health     ToiletHealth?
+  comment    String?
+  createdAt  DateTime      @default(now())
+  DogProfile DogProfile    @relation(fields: [dogId], references: [id])
+}
+
+model User {
+  id             Int          @id @default(autoincrement())
+  userName       String
+  email          String       @unique
+  hashedPassword String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime
+  DogProfile     DogProfile[]
+}
+
+model WalkLog {
+  id         Int        @id @default(autoincrement())
+  dogId      Int
+  minutes    Int
+  distanceKm Float?
+  weather    Weather?
+  startedAt  DateTime?
+  comment    String?
+  createdAt  DateTime   @default(now())
+  DogProfile DogProfile @relation(fields: [dogId], references: [id])
+}
+
+enum DayPeriod {
+  MORNING
+  AFTERNOON
+  EVENING
+  NIGHT
+  MIDNIGHT
+}
+
+enum EatenAmount {
+  ALL
+  HALF
+  LITTLE
+  NONE
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+}
+
+enum NoteType {
+  DAILY
+  WEEKLY
+}
+
+enum PlayType {
+  RUN
+  PULL
+  CUDDLE
+  LICK
+  OTHER
+}
+
+enum ToiletHealth {
+  NORMAL
+  SOFT
+  HARD
+  BLOODY
+  OTHER
+}
+
+enum ToiletType {
+  ONE
+  TWO
+  BOTH
+}
+
+enum TrainingStage {
+  PUPPY
+  BASIC
+  INTERMEDIATE
+  ADVANCED
+  OTHER
+}
+
+enum Weather {
+  HOT
+  COOL
+  HUMID
+  COLD
+  NORMAL
+  RAINY
+  THUNDER
+}
+
+enum gender {
+  MALE
+  FEMALE
+}
+
+
+// for RAG
+
+model DogWeekSummary {
+  id      Int  @id @default(autoincrement())
+  dogId   Int
+
+  /// 週の開始・終了（日付）
+  weekStart DateTime @map("week_start")
+  weekEnd   DateTime @map("week_end")
+
+  /// 1日の one/two の頻度の週平均（割合なら本当は Decimal 推奨だけど、とりあえず Int のまま）
+  avgOneFreqDay Int? @map("avg_one_freq_day")
+  avgTwoFreqDay Int? @map("avg_two_freq_day")
+
+  toiletFailRate Decimal? @map("toilet_fail_rate")
+  avgFood        Int?     @map("avg_food")
+  avgWalkMinutes Int?     @map("avg_walk_minutes")
+  avgWalkDistance Int?    @map("avg_walk_distance")
+  avgSleepHour   Int?     @map("avg_sleep_hour")
+  barkNightCount Int?     @map("bark_night_count")
+
+  summaryJson Json?   @map("summary_json")
+  summaryText String? @map("summary_text")
+
+  createdAt  DateTime @default(now()) @map("createdAt")
+  updatedAt  DateTime @default(now()) @map("updatedAt")
+
+  // Relations（db pull 済みの DogProfile に紐づけ）
+  dog DogProfile @relation(fields: [dogId], references: [id])
+
+  @@unique([dogId, weekStart, weekEnd], name: "uq_dog_week")
+  @@map("DogWeekSummary")
+}
+
+model DogWeekText {
+  id    Int @id @default(autoincrement())
+  dogId Int
+
+  weekStart DateTime @map("week_start")
+  weekEnd   DateTime @map("week_end")
+
+  eventAt   DateTime @map("event_at")
+
+  /// 'toilet', 'food', 'walk', 'play', 'sleep', 'bark', 'custom', 'note'
+  category    String
+  sourceTable String  @map("source_table")
+  sourceId    Int?    @map("source_id")
+
+  title   String?
+  content String
+
+  metadataJson Json? @map("metadata_json")
+
+  createdAt DateTime @default(now()) @map("createdAt")
+
+  dog DogProfile @relation(fields: [dogId], references: [id])
+
+  @@map("DogWeekText")
+}
