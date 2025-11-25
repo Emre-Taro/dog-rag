@@ -3,15 +3,27 @@ import { query } from '@/lib/db';
 import { validateLogData, ValidationError } from '@/lib/validation';
 import { DogLog, LogType } from '@/types';
 import { findLogTable, getLogTableName } from '@/lib/log-tables-simple';
+import { requireAuth } from '@/lib/auth';
 
 // PATCH /api/logs/[logId] - Update a log entry
 export async function PATCH(req: Request, { params }: { params: Promise<{ logId: string }> }) {
   const startTime = Date.now();
   try {
+    // Require authentication
+    const auth = await requireAuth(req);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    const userId = auth.userId;
+
     const { logId } = await params;
     console.log('[PATCH] ===== PATCH /api/logs/:id called =====');
     console.log('[PATCH] Log ID:', logId);
     console.log('[PATCH] Request URL:', req.url);
+    console.log('[PATCH] Authenticated user ID:', userId);
     
     const updates = await req.json();
     console.log('[PATCH] Request body received:', JSON.stringify(updates, null, 2));
@@ -157,9 +169,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ logId:
         }
       });
 
-      // Get userId from DogProfile
+      // Verify that the log belongs to the authenticated user
       const dogResult = await query('SELECT "ownerId" FROM "DogProfile" WHERE id = $1', [existingLog.dogId]);
-      const userId = dogResult.rows[0]?.ownerId;
+      const logOwnerId = dogResult.rows[0]?.ownerId;
+      if (logOwnerId !== userId) {
+        return NextResponse.json(
+          { success: false, error: 'Access denied' },
+          { status: 403 }
+        );
+      }
+      // Use authenticated userId for response
 
       if (!logType) {
         return NextResponse.json(
@@ -256,9 +275,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ logId:
       }
     });
 
-    // Get userId from DogProfile
+    // Verify that the log belongs to the authenticated user
     const dogResult = await query('SELECT "ownerId" FROM "DogProfile" WHERE id = $1', [row.dogId]);
-    const userId = dogResult.rows[0]?.ownerId;
+    const logOwnerId = dogResult.rows[0]?.ownerId;
+    if (logOwnerId !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'Access denied' },
+        { status: 403 }
+      );
+    }
 
     const updatedLog: DogLog = {
       id: String(row.id),
@@ -305,6 +330,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ logId:
 // DELETE /api/logs/[logId] - Delete a log entry
 export async function DELETE(req: Request, { params }: { params: Promise<{ logId: string }> }) {
   try {
+    // Require authentication
+    const auth = await requireAuth(req);
+    if (!auth) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    const userId = auth.userId;
+
     const { logId } = await params;
     const { searchParams } = new URL(req.url);
     const logType = searchParams.get('log_type') as LogType | null;
@@ -327,12 +362,18 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ logId
       tableName = logInfo.table;
     }
 
-    // Check if log exists
-    const checkResult = await query(`SELECT id FROM "${tableName}" WHERE id = $1`, [parseInt(logId)]);
+    // Check if log exists and belongs to user
+    const checkResult = await query(
+      `SELECT l.id, dp."ownerId" 
+       FROM "${tableName}" l
+       INNER JOIN "DogProfile" dp ON l."dogId" = dp.id
+       WHERE l.id = $1 AND dp."ownerId" = $2`,
+      [parseInt(logId), userId]
+    );
     
     if (checkResult.rows.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'Log entry not found' },
+        { success: false, error: 'Log entry not found or access denied' },
         { status: 404 }
       );
     }

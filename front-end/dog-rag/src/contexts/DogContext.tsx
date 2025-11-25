@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { DogProfile } from '@/types';
-import { FIXED_USER_ID } from '@/lib/constants';
+import { useAuth, getAuthHeaders } from '@/contexts/AuthContext';
 
 interface DogContextType {
   selectedDogId: number | null;
@@ -45,11 +45,25 @@ export function DogProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const { token } = useAuth();
+
   const fetchDogs = async () => {
     try {
-      // TODO: Get user_id from authentication/session
-      const response = await fetch(`/api/dogs?user_id=${FIXED_USER_ID}`);
+      if (!token) {
+        console.log('[DogContext] No token available, skipping fetch');
+        setDogs([]);
+        return;
+      }
+      const response = await fetch('/api/dogs', {
+        headers: getAuthHeaders(token),
+      });
       const result = await response.json();
+      
+      if (!response.ok) {
+        console.error('[DogContext] Failed to fetch dogs:', result.error);
+        setDogs([]);
+        return;
+      }
       if (result.success && result.data) {
         setDogs(result.data);
         
@@ -80,8 +94,14 @@ export function DogProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    fetchDogs();
-  }, []);
+    if (token) {
+      fetchDogs();
+    } else {
+      setDogs([]);
+      setSelectedDog(null);
+      setSelectedDogId(null);
+    }
+  }, [token]);
 
   useEffect(() => {
     if (selectedDogId) {

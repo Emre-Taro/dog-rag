@@ -5,7 +5,7 @@ import { useDog } from '@/contexts/DogContext';
 import { Button } from '@/components/ui/Button';
 import { RagMessage } from '@/types';
 import Link from 'next/link';
-import { FIXED_USER_ID } from '@/lib/constants';
+import { useAuth, getAuthHeaders } from '@/contexts/AuthContext';
 
 const suggestions = [
   '最近の食事状況はどうですか？',
@@ -18,6 +18,7 @@ const suggestions = [
 
 export function RagPage() {
   const { selectedDogId, selectedDog, dogs, setSelectedDogId } = useDog();
+  const { token } = useAuth();
   const [messages, setMessages] = useState<RagMessage[]>([
     {
       id: '1',
@@ -57,11 +58,13 @@ export function RagPage() {
     try {
       const response = await fetch('/api/rag/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(token),
+        },
         body: JSON.stringify({
           prompt: input,
           dogId: selectedDogId,
-          user_id: FIXED_USER_ID, // TODO: Get from auth
         }),
       });
 

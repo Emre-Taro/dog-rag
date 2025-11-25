@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { AppShell } from '@/components/layout/Appshell';
 import { DogProvider } from '@/contexts/DogContext';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 export const metadata: Metadata = {
   title: 'Dog Health RAG',
@@ -16,9 +17,11 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className="bg-slate-950">
-        <DogProvider>
-          <AppShell>{children}</AppShell>
-        </DogProvider>
+        <AuthProvider>
+          <DogProvider>
+            <AppShell>{children}</AppShell>
+          </DogProvider>
+        </AuthProvider>
       </body>
     </html>
   );
