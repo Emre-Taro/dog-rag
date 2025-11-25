@@ -30,6 +30,9 @@ export function RagPage() {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fetchingData, setFetchingData] = useState(false);
+  const [weeklyData, setWeeklyData] = useState<any>(null);
+  const [daysRange, setDaysRange] = useState('30');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -65,6 +68,7 @@ export function RagPage() {
         body: JSON.stringify({
           prompt: input,
           dogId: selectedDogId,
+          weeklyData: weeklyData, // 週間サマリーとテキストデータを送信
         }),
       });
 
@@ -106,6 +110,51 @@ export function RagPage() {
 
   const handleSuggestion = (suggestion: string) => {
     setInput(suggestion);
+  };
+
+  const fetchWeeklyData = async () => {
+    if (!selectedDogId || fetchingData) return;
+
+    setFetchingData(true);
+    try {
+      const response = await fetch(
+        `/api/weekly-summary?dog_id=${selectedDogId}&days=${daysRange}`,
+        {
+          headers: {
+            ...getAuthHeaders(token),
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        setWeeklyData(data.data);
+        // 成功メッセージを追加
+        const successMessage: RagMessage = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: `過去${daysRange}日間の週間サマリーとテキストデータを取得しました。これらを参照して質問に答えることができます。`,
+          timestamp: new Date(),
+          dogId: selectedDogId?.toString(),
+        };
+        setMessages((prev) => [...prev, successMessage]);
+      } else {
+        throw new Error(data.error || 'データの取得に失敗しました');
+      }
+    } catch (error) {
+      console.error('Error fetching weekly data:', error);
+      const errorMessage: RagMessage = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: '週間データの取得に失敗しました。もう一度お試しください。',
+        timestamp: new Date(),
+        dogId: selectedDogId?.toString(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setFetchingData(false);
+    }
   };
 
   const formatTime = (date: Date): string => {
@@ -151,6 +200,50 @@ export function RagPage() {
           ))}
         </select>
       </div>
+
+      {/* データ取得セクション */}
+      <section className="rounded-2xl bg-slate-900 p-5">
+        <h2 className="mb-3 text-sm font-semibold">週間データの取得</h2>
+        <p className="mb-4 text-xs text-slate-400">
+          週間サマリーとテキストデータを取得して、RAGの回答の参照に使用できます
+        </p>
+        <div className="flex items-center gap-3">
+          <select
+            value={daysRange}
+            onChange={(e) => setDaysRange(e.target.value)}
+            className="rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-200"
+            disabled={fetchingData}
+          >
+            <option value="7">過去7日間</option>
+            <option value="14">過去14日間</option>
+            <option value="30">過去30日間</option>
+            <option value="60">過去60日間</option>
+            <option value="90">過去90日間</option>
+          </select>
+          <Button
+            onClick={fetchWeeklyData}
+            disabled={fetchingData || !selectedDogId}
+            className="px-4"
+          >
+            {fetchingData ? '取得中...' : weeklyData ? 'データを再取得' : 'データを取得'}
+          </Button>
+          {weeklyData && (
+            <span className="text-xs text-green-400">
+              ✓ {weeklyData.weeks?.length || 0}週分のデータを取得済み
+            </span>
+          )}
+        </div>
+        {weeklyData && (
+          <div className="mt-3 rounded-lg bg-slate-800 p-3 text-xs text-slate-300">
+            <p className="mb-1">
+              <strong>取得期間:</strong> {weeklyData.dateRange?.start} 〜 {weeklyData.dateRange?.end}
+            </p>
+            <p>
+              <strong>週数:</strong> {weeklyData.weeks?.length || 0}週
+            </p>
+          </div>
+        )}
+      </section>
 
       {/* おすすめ質問 */}
       <section className="rounded-2xl bg-slate-900 p-5">

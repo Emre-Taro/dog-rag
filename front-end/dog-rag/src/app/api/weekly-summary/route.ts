@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth'
 import { buildWeeklyDataForRange } from '@/lib/weeklySummary/buildWeeklyData'
 import { prisma } from '@/lib/weeklySummary/weeklySummary'
+import { writeFile, mkdir } from 'fs/promises'
+import { join } from 'path'
 
 /**
  * GET /api/weekly-summary
@@ -119,16 +121,66 @@ export async function GET(req: Request) {
       endDate,
     })
 
+    const responseData = {
+      dogId,
+      dateRange: {
+        start: startDate.toISOString().split('T')[0],
+        end: endDate.toISOString().split('T')[0],
+      },
+      weeks: result.weeks,
+    }
+
+    // Save to JSON file in src/data directory
+    try {
+      const dataDir = join(process.cwd(), 'src', 'data')
+      
+      // Ensure directory exists
+      await mkdir(dataDir, { recursive: true })
+      
+      // Format data for JSON file (RAG-friendly format: only natural language text)
+      const dogProfile = await prisma.dogProfile.findUnique({
+        where: { id: dogId },
+        select: { dogName: true },
+      })
+      
+      const jsonData = {
+        dogId,
+        dogName: dogProfile?.dogName || 'Unknown',
+        weeks: result.weeks.map((week) => {
+          // Extract only text content from timeline entries (simple string array)
+          const textContents = (week.timelineJson?.entries || [])
+            .map((entry: any) => {
+              // Format: "YYYY-MM-DD [category] content" or "YYYY-MM-DD [category] title: content"
+              const date = entry.eventAt.split('T')[0]
+              const category = entry.category
+              if (entry.title) {
+                return `${date} [${category}] ${entry.title}: ${entry.content}`
+              }
+              return `${date} [${category}] ${entry.content}`
+            })
+            .filter((text: string) => text.trim().length > 0) // Remove empty texts
+
+          return {
+            period: `${week.weekStart} 〜 ${week.weekEnd}`,
+            summary: week.summaryText || '', // Natural language summary
+            texts: textContents, // Simple array of text strings for RAG
+          }
+        }),
+      }
+
+      // Write to file (overwrite on each fetch)
+      const filePath = join(dataDir, `weekly-summary-${dogId}.json`)
+      await writeFile(filePath, JSON.stringify(jsonData, null, 2), 'utf-8')
+      
+      console.log(`[weekly-summary] Saved data to ${filePath}`)
+    } catch (fileError) {
+      console.error('[weekly-summary] Error saving to file:', fileError)
+      // Don't fail the request if file save fails
+    }
+
     return NextResponse.json({
       success: true,
-      data: {
-        dogId,
-        dateRange: {
-          start: startDate.toISOString().split('T')[0],
-          end: endDate.toISOString().split('T')[0],
-        },
-        weeks: result.weeks,
-      },
+      data: responseData,
     })
   } catch (error) {
     console.error('Error fetching weekly summary:', error)
