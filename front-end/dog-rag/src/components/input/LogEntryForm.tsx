@@ -4,6 +4,7 @@ import { useState, FormEvent } from 'react';
 import { LogType, LogData } from '@/types';
 import { Button } from '@/components/ui/Button';
 import { useAuth, getAuthHeaders } from '@/contexts/AuthContext';
+import { jstToUTC, utcToJSTLocal, getCurrentJSTLocal } from '@/lib/datetime';
 
 interface LogEntryFormProps {
   logType: LogType;
@@ -211,13 +212,16 @@ function ToiletForm({ initialData, onSubmit, onCancel, loading }: any) {
   const [type, setType] = useState<'ONE' | 'TWO' | 'BOTH'>(initialData?.type || 'ONE');
   const [success, setSuccess] = useState(initialData?.success ?? true);
   const [health, setHealth] = useState<'NORMAL' | 'SOFT' | 'HARD' | 'BLOODY' | 'OTHER'>(initialData?.health || 'NORMAL');
+  const [time, setTime] = useState(
+    initialData?.time ? utcToJSTLocal(initialData.time) : getCurrentJSTLocal()
+  );
   const [comment, setComment] = useState(initialData?.comment || '');
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     onSubmit({
       type,
-      time: new Date().toISOString(),
+      time: jstToUTC(time),
       success,
       health,
       comment: comment || undefined,
@@ -237,6 +241,15 @@ function ToiletForm({ initialData, onSubmit, onCancel, loading }: any) {
           <option value="TWO">排便</option>
           <option value="BOTH">両方</option>
         </select>
+      </div>
+      <div>
+        <label className="mb-1 block text-sm">時刻</label>
+        <input
+          type="datetime-local"
+          value={time}
+          onChange={(e) => setTime(e.target.value)}
+          className="w-full rounded-lg bg-slate-800 px-3 py-2"
+        />
       </div>
       <div>
         <label className="mb-1 block text-sm">成功</label>
@@ -296,7 +309,7 @@ function FoodForm({ initialData, onSubmit, onCancel, loading }: any) {
     initialData?.eatenAmount?.toUpperCase() || initialData?.completion?.toUpperCase() || ''
   );
   const [time, setTime] = useState(
-    initialData?.time ? new Date(initialData.time).toISOString().slice(0, 16) : ''
+    initialData?.time ? utcToJSTLocal(initialData.time) : ''
   );
   const [comment, setComment] = useState(initialData?.comment || '');
 
@@ -314,7 +327,7 @@ function FoodForm({ initialData, onSubmit, onCancel, loading }: any) {
     const formData = {
       mealType,
       amountGrams: amountGrams ? parseFloat(amountGrams) : undefined,
-      time: time || new Date().toISOString(),
+      time: time ? jstToUTC(time) : jstToUTC(getCurrentJSTLocal()),
       eatenAmount: eatenAmount || undefined,
       comment: comment || undefined,
     };
@@ -397,14 +410,14 @@ function FoodForm({ initialData, onSubmit, onCancel, loading }: any) {
 
 function SleepForm({ initialData, onSubmit, onCancel, loading }: any) {
   const [durationMinutes, setDurationMinutes] = useState(initialData?.durationMinutes || initialData?.duration || '');
-  const [startedAt, setStartedAt] = useState(initialData?.startedAt ? new Date(initialData.startedAt).toISOString().slice(0, 16) : '');
+  const [startedAt, setStartedAt] = useState(initialData?.startedAt ? utcToJSTLocal(initialData.startedAt) : '');
   const [comment, setComment] = useState(initialData?.comment || '');
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     onSubmit({
       durationMinutes: parseInt(durationMinutes),
-      startedAt: startedAt || undefined,
+      startedAt: startedAt ? jstToUTC(startedAt) : undefined,
       comment: comment || undefined,
     });
   };
@@ -458,7 +471,7 @@ function WalkForm({ initialData, onSubmit, onCancel, loading }: any) {
   const [minutes, setMinutes] = useState(initialData?.minutes || '');
   const [distanceKm, setDistanceKm] = useState(initialData?.distanceKm || initialData?.distance || '');
   const [weather, setWeather] = useState(initialData?.weather || '');
-  const [startedAt, setStartedAt] = useState(initialData?.startedAt ? new Date(initialData.startedAt).toISOString().slice(0, 16) : '');
+  const [startedAt, setStartedAt] = useState(initialData?.startedAt ? utcToJSTLocal(initialData.startedAt) : '');
   const [comment, setComment] = useState(initialData?.comment || '');
 
   const handleSubmit = (e: FormEvent) => {
@@ -467,7 +480,7 @@ function WalkForm({ initialData, onSubmit, onCancel, loading }: any) {
       minutes: parseInt(minutes),
       distanceKm: distanceKm ? parseFloat(distanceKm) : undefined,
       weather: weather || undefined,
-      startedAt: startedAt || undefined,
+      startedAt: startedAt ? jstToUTC(startedAt) : undefined,
       comment: comment || undefined,
     });
   };
@@ -549,7 +562,7 @@ function WalkForm({ initialData, onSubmit, onCancel, loading }: any) {
 function PlayForm({ initialData, onSubmit, onCancel, loading }: any) {
   const [minutes, setMinutes] = useState(initialData?.minutes || '');
   const [playType, setPlayType] = useState<'RUN' | 'PULL' | 'CUDDLE' | 'LICK' | 'OTHER'>(initialData?.playType || initialData?.activity || 'RUN');
-  const [startedAt, setStartedAt] = useState(initialData?.startedAt ? new Date(initialData.startedAt).toISOString().slice(0, 16) : '');
+  const [startedAt, setStartedAt] = useState(initialData?.startedAt ? utcToJSTLocal(initialData.startedAt) : '');
   const [comment, setComment] = useState(initialData?.comment || '');
 
   const handleSubmit = (e: FormEvent) => {
@@ -557,7 +570,7 @@ function PlayForm({ initialData, onSubmit, onCancel, loading }: any) {
     onSubmit({
       minutes: parseInt(minutes),
       playType,
-      startedAt: startedAt || undefined,
+      startedAt: startedAt ? jstToUTC(startedAt) : undefined,
       comment: comment || undefined,
     });
   };
@@ -623,7 +636,7 @@ function PlayForm({ initialData, onSubmit, onCancel, loading }: any) {
 
 function BarkForm({ initialData, onSubmit, onCancel, loading }: any) {
   const [time, setTime] = useState(
-    initialData?.time ? new Date(initialData.time).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)
+    initialData?.time ? utcToJSTLocal(initialData.time) : getCurrentJSTLocal()
   );
   const [period, setPeriod] = useState(initialData?.period || '');
   const [before, setBefore] = useState(initialData?.before || '');
@@ -635,7 +648,7 @@ function BarkForm({ initialData, onSubmit, onCancel, loading }: any) {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     onSubmit({
-      time: new Date(time).toISOString(),
+      time: jstToUTC(time),
       period: period || undefined,
       before: before || undefined,
       after: after || undefined,
@@ -716,20 +729,13 @@ function CustomForm({ initialData, onSubmit, onCancel, loading }: any) {
   const [title, setTitle] = useState(initialData?.title || '');
   const [content, setContent] = useState(initialData?.content || initialData?.value || initialData?.comment || '');
   const [loggedAt, setLoggedAt] = useState(
-    initialData?.loggedAt ? new Date(initialData.loggedAt).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)
+    initialData?.loggedAt ? utcToJSTLocal(initialData.loggedAt) : getCurrentJSTLocal()
   );
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    // Convert datetime-local format to ISO string
-    let loggedAtValue: string;
-    if (loggedAt) {
-      // datetime-local format is YYYY-MM-DDTHH:mm, convert to ISO
-      const date = new Date(loggedAt);
-      loggedAtValue = date.toISOString();
-    } else {
-      loggedAtValue = new Date().toISOString();
-    }
+    // Convert JST datetime-local format to UTC ISO string
+    const loggedAtValue = loggedAt ? jstToUTC(loggedAt) : jstToUTC(getCurrentJSTLocal());
     onSubmit({
       title,
       content,
