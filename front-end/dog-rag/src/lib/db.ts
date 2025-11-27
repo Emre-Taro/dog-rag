@@ -1,28 +1,38 @@
-// Database configuration and connection utilities
-// This file will handle PostgreSQL connections
-
+// db.ts
 import { Pool } from 'pg';
 
-// Database connection pool
 let pool: Pool | null = null;
 
 export function getDbPool(): Pool {
   if (!pool) {
-    pool = new Pool({
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      database: process.env.DB_NAME || 'dog_rag_db',
-      user: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD || '',
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error('DATABASE_URL is not set');
+    }
+
+    // Configure pool with SSL for AWS RDS
+    const poolConfig: any = {
+      connectionString,
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 2000,
-    });
+    };
+
+    // If connecting to AWS RDS, enable SSL
+    if (connectionString.includes('rds.amazonaws.com') || connectionString.includes('amazonaws.com')) {
+      // If SSL is not already specified in the connection string, add it
+      if (!connectionString.includes('sslmode=') && !connectionString.includes('ssl=')) {
+        poolConfig.ssl = {
+          rejectUnauthorized: false, // AWS RDS uses self-signed certificates
+        };
+      }
+    }
+
+    pool = new Pool(poolConfig);
   }
   return pool;
 }
 
-// Close the pool (useful for cleanup)
 export async function closeDbPool(): Promise<void> {
   if (pool) {
     await pool.end();
@@ -30,7 +40,6 @@ export async function closeDbPool(): Promise<void> {
   }
 }
 
-// Helper function to execute queries
 export async function query(text: string, params?: any[]) {
   const db = getDbPool();
   const start = Date.now();
@@ -44,4 +53,3 @@ export async function query(text: string, params?: any[]) {
     throw error;
   }
 }
-
