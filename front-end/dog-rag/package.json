@@ -16,13 +16,16 @@
     "@prisma/adapter-pg": "^7.0.0",
     "@prisma/client": "^7.0.0",
     "bcryptjs": "^3.0.3",
+    "html2canvas-pro": "^1.5.13",
     "jsonwebtoken": "^9.0.2",
+    "jspdf": "^3.0.4",
     "next": "^16.0.3",
     "pg": "^8.16.3",
     "prisma": "^7.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-markdown": "^10.1.0"
+    "react-markdown": "^10.1.0",
+    "recharts": "^3.5.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

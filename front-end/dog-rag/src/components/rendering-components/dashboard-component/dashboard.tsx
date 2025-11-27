@@ -1,11 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDog } from '@/contexts/DogContext';
 import { useAuth, getAuthHeaders } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { DashboardStats, ActivityRecord, HealthIndicator } from '@/types';
 import Link from 'next/link';
+import { ToiletFailRateChart } from '@/components/dashboard/ToiletFailRateChart';
+import { BarkNightChart } from '@/components/dashboard/BarkNightChart';
+import { ActivityHeatmap } from '@/components/dashboard/ActivityHeatmap';
+import { CustomLogList } from '@/components/dashboard/CustomLogList';
+import { ConcernList } from '@/components/dashboard/ConcernList';
+import html2canvas from 'html2canvas-pro';
+import jsPDF from 'jspdf';
 
 export function DashboardPage() {
   const { selectedDogId, selectedDog, dogs, setSelectedDogId } = useDog();
@@ -13,8 +20,16 @@ export function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [activityRecords, setActivityRecords] = useState<ActivityRecord[]>([]);
   const [healthIndicators, setHealthIndicators] = useState<HealthIndicator[]>([]);
+  const [toiletFailRateData, setToiletFailRateData] = useState<any[]>([]);
+  const [barkNightData, setBarkNightData] = useState<any[]>([]);
+  const [activityHeatmapData, setActivityHeatmapData] = useState<any[]>([]);
+  const [customLogs, setCustomLogs] = useState<any[]>([]);
+  const [dailyStats, setDailyStats] = useState<any>(null);
+  const [ragMessages, setRagMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [days, setDays] = useState(30);
+  const [exportingPDF, setExportingPDF] = useState(false);
+  const dashboardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (selectedDogId) {
@@ -51,6 +66,56 @@ export function DashboardPage() {
         setActivityRecords(summaryResult.data.activity_records || []);
         setHealthIndicators(summaryResult.data.health_indicators || []);
       }
+
+      // Fetch visualization data
+      const vizResponse = await fetch(
+        `/api/dashboard/visualization?dog_id=${selectedDogId}&days=${days}`,
+        {
+          headers: getAuthHeaders(token),
+        }
+      );
+      const vizResult = await vizResponse.json();
+      if (vizResult.success) {
+        setToiletFailRateData(vizResult.data.toiletFailRate || []);
+        setBarkNightData(vizResult.data.barkNight || []);
+        setActivityHeatmapData(vizResult.data.activityHeatmap || []);
+      }
+
+      // Fetch custom logs
+      const customLogsResponse = await fetch(
+        `/api/dashboard/custom-logs?dog_id=${selectedDogId}&days=${days}`,
+        {
+          headers: getAuthHeaders(token),
+        }
+      );
+      const customLogsResult = await customLogsResponse.json();
+      if (customLogsResult.success) {
+        setCustomLogs(customLogsResult.data.customLogs || []);
+      }
+
+      // Fetch daily stats
+      const dailyStatsResponse = await fetch(
+        `/api/dashboard/daily-stats?dog_id=${selectedDogId}&days=${days}`,
+        {
+          headers: getAuthHeaders(token),
+        }
+      );
+      const dailyStatsResult = await dailyStatsResponse.json();
+      if (dailyStatsResult.success) {
+        setDailyStats(dailyStatsResult.data);
+      }
+
+      // Fetch RAG messages for concerns
+      const ragMessagesResponse = await fetch(
+        `/api/rag/messages?dogId=${selectedDogId}&limit=50`,
+        {
+          headers: getAuthHeaders(token),
+        }
+      );
+      const ragMessagesResult = await ragMessagesResponse.json();
+      if (ragMessagesResult.success) {
+        setRagMessages(ragMessagesResult.messages || []);
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -58,30 +123,107 @@ export function DashboardPage() {
     }
   };
 
-  const handleExportCSV = async () => {
-    if (!selectedDogId) return;
+  const handleExportPDF = async () => {
+    if (!selectedDogId || !dashboardRef.current || exportingPDF) return;
 
+    setExportingPDF(true);
     try {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - days);
+      // Wait a bit to ensure all charts are rendered
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const url = `/api/logs/export?dog_id=${selectedDogId}&start_date=${startDate.toISOString()}&end_date=${endDate.toISOString()}`;
-      const response = await fetch(url, {
-        headers: getAuthHeaders(token),
+      // Capture the dashboard as an image
+      // Use simpler options to avoid lab() color function parsing issues
+      const canvas = await html2canvas(dashboardRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#0f172a',
+        allowTaint: false,
+        removeContainer: false,
+        imageTimeout: 15000,
+        onclone: (clonedDoc) => {
+          // Ensure SVG elements are visible
+          const svgs = clonedDoc.querySelectorAll('svg');
+          svgs.forEach((svg) => {
+            svg.setAttribute('style', 'opacity: 1 !important; visibility: visible !important;');
+          });
+        },
+      }).catch((error) => {
+        console.error('html2canvas error (first attempt):', error);
+        // Retry with more permissive settings
+        console.log('Retrying with simplified settings...');
+        return html2canvas(dashboardRef.current!, {
+          scale: 1.5,
+          useCORS: false,
+          logging: false,
+          backgroundColor: '#0f172a',
+          allowTaint: true,
+          removeContainer: false,
+        });
+      }).catch((error) => {
+        console.error('html2canvas error (second attempt):', error);
+        throw new Error(`スクリーンショットの取得に失敗しました: ${error.message || '不明なエラー'}`);
       });
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = downloadUrl;
-      a.download = `dashboard-${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(downloadUrl);
-      document.body.removeChild(a);
+
+      if (!canvas) {
+        throw new Error('Canvas creation failed');
+      }
+
+      // Create PDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      // Convert pixels to mm (96 DPI = 0.264583 mm per pixel)
+      const pxToMm = 0.264583;
+      const imgWidth = (canvas.width * pxToMm);
+      const imgHeight = (canvas.height * pxToMm);
+      
+      // Calculate scale to fit width
+      const widthScale = pdfWidth / imgWidth;
+      const scaledWidth = pdfWidth;
+      const scaledHeight = imgHeight * widthScale;
+
+      // Get image data
+      const imgData = canvas.toDataURL('image/png', 0.95);
+      
+      if (!imgData || imgData === 'data:,') {
+        throw new Error('画像データの生成に失敗しました');
+      }
+
+      // Add pages for long content
+      let heightLeft = scaledHeight;
+      let position = 0;
+      let pageNum = 1;
+
+      // Add first page
+      pdf.addImage(imgData, 'PNG', 0, position, scaledWidth, scaledHeight);
+      heightLeft -= pdfHeight;
+
+      // Add additional pages if needed
+      while (heightLeft > 0) {
+        position = heightLeft - scaledHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, scaledWidth, scaledHeight);
+        heightLeft -= pdfHeight;
+        pageNum++;
+        
+        // Safety check
+        if (pageNum > 20) {
+          console.warn('Reached maximum page limit');
+          break;
+        }
+      }
+
+      // Save PDF
+      const fileName = `dashboard-${selectedDog?.dogName || 'report'}-${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
     } catch (error) {
-      console.error('Error exporting CSV:', error);
-      alert('Export failed');
+      console.error('Error exporting PDF:', error);
+      const errorMessage = error instanceof Error ? error.message : '不明なエラー';
+      alert(`PDFエクスポートに失敗しました: ${errorMessage}`);
+    } finally {
+      setExportingPDF(false);
     }
   };
 
@@ -103,7 +245,7 @@ export function DashboardPage() {
   const maxActivity = Math.max(...activityRecords.map((r) => r.count), 0);
 
   return (
-    <div className="space-y-6">
+    <div ref={dashboardRef} className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Analysis & Reports</h1>
@@ -131,124 +273,161 @@ export function DashboardPage() {
             <option value="90">Past 90 days</option>
             <option value="365">Past year</option>
           </select>
-          <Button variant="ghost" onClick={handleExportCSV}>
-            CSV
+          <Button variant="ghost" onClick={handleExportPDF} disabled={exportingPDF}>
+            {exportingPDF ? '出力中...' : 'PDF'}
           </Button>
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* Daily Statistics Cards */}
       {loading ? (
         <div className="text-center py-8 text-slate-400">Loading...</div>
-      ) : stats ? (
+      ) : dailyStats ? (
         <section className="grid gap-4 md:grid-cols-4">
-          <div className="rounded-2xl bg-slate-900 p-4 text-xs text-slate-300">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800">
-                📈
-              </div>
-              <span className="text-xs text-emerald-400">
-                {stats.period_comparison?.records_change && stats.period_comparison.records_change > 0 ? '+' : ''}
-                {stats.period_comparison?.records_change || 0}%
-              </span>
-            </div>
-            <div className="text-[11px] text-slate-400">Total Records</div>
-            <div className="mt-1 text-xl font-semibold text-slate-50">{stats.total_records}</div>
-          </div>
-
-          <div className="rounded-2xl bg-slate-900 p-4 text-xs text-slate-300">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800">
-                🚶
-              </div>
-              <span className="text-xs text-emerald-400">
-                {stats.period_comparison?.walk_time_change && stats.period_comparison.walk_time_change > 0 ? '+' : ''}
-                {stats.period_comparison?.walk_time_change || 0}%
-              </span>
-            </div>
-            <div className="text-[11px] text-slate-400">Avg Walk Time</div>
-            <div className="mt-1 text-xl font-semibold text-slate-50">{stats.average_walk_time} min</div>
-          </div>
-
+          {/* 食事統計 */}
           <div className="rounded-2xl bg-slate-900 p-4 text-xs text-slate-300">
             <div className="mb-3 flex items-center justify-between">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800">
                 🍽️
               </div>
-              <span
-                className={`text-xs ${
-                  (stats.period_comparison?.meal_rate_change || 0) >= 0
-                    ? 'text-red-400'
-                    : 'text-emerald-400'
-                }`}
-              >
-                {stats.period_comparison?.meal_rate_change && stats.period_comparison.meal_rate_change > 0 ? '+' : ''}
-                {stats.period_comparison?.meal_rate_change || 0}%
-              </span>
             </div>
-            <div className="text-[11px] text-slate-400">Meal Completion Rate</div>
-            <div className="mt-1 text-xl font-semibold text-slate-50">{stats.meal_completion_rate}%</div>
+            <div className="text-[11px] text-slate-400 mb-2">食事（1日平均）</div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">回数:</span>
+                <span className="text-sm font-semibold text-slate-50">{dailyStats.meals.avgMealsPerDay}回</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">1回あたり:</span>
+                <span className="text-sm font-semibold text-slate-50">{dailyStats.meals.avgGramsPerMeal}g</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">1日合計:</span>
+                <span className="text-sm font-semibold text-slate-50">{dailyStats.meals.avgGramsPerDay}g</span>
+              </div>
+            </div>
           </div>
 
+          {/* 排泄統計 */}
+          <div className="rounded-2xl bg-slate-900 p-4 text-xs text-slate-300">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800">
+                🚽
+              </div>
+            </div>
+            <div className="text-[11px] text-slate-400 mb-2">排泄（1日平均）</div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">おしっこ:</span>
+                <span className="text-sm font-semibold text-slate-50">{dailyStats.toilet.avgOnePerDay}回</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">うんち:</span>
+                <span className="text-sm font-semibold text-slate-50">{dailyStats.toilet.avgTwoPerDay}回</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 睡眠統計 */}
+          <div className="rounded-2xl bg-slate-900 p-4 text-xs text-slate-300">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800">
+                😴
+              </div>
+            </div>
+            <div className="text-[11px] text-slate-400 mb-2">睡眠（1日平均）</div>
+            <div className="mt-1 text-xl font-semibold text-slate-50">{dailyStats.sleep.avgHoursPerDay}時間</div>
+            <div className="mt-1 text-[10px] text-slate-500">
+              {Math.round(dailyStats.sleep.avgHoursPerDay * 60)}分
+            </div>
+          </div>
+
+          {/* 異常検知 */}
           <div className="rounded-2xl bg-slate-900 p-4 text-xs text-slate-300">
             <div className="mb-3 flex items-center justify-between">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800">
                 ⚠️
               </div>
-              <span className="text-xs font-semibold text-red-400">Needs Review</span>
+              {dailyStats.anomalies.count > 0 && (
+                <span className="text-xs font-semibold text-red-400">要確認</span>
+              )}
             </div>
-            <div className="text-[11px] text-slate-400">Anomaly Detections</div>
-            <div className="mt-1 text-xl font-semibold text-slate-50">{stats.anomaly_detections}</div>
+            <div className="text-[11px] text-slate-400 mb-2">異常検知</div>
+            <div className="mt-1 text-xl font-semibold text-slate-50">{dailyStats.anomalies.count}件</div>
+            {dailyStats.anomalies.count > 0 && (
+              <div className="mt-2 space-y-0.5 text-[10px] text-slate-500">
+                {dailyStats.anomalies.details.highDifficultyBarks > 0 && (
+                  <div>・激しい鳴き声: {dailyStats.anomalies.details.highDifficultyBarks}回</div>
+                )}
+                {dailyStats.anomalies.details.failedToilets > 0 && (
+                  <div>・トイレ失敗: {dailyStats.anomalies.details.failedToilets}回</div>
+                )}
+                {dailyStats.anomalies.details.littleFood > 0 && (
+                  <div>・食事少量: {dailyStats.anomalies.details.littleFood}回</div>
+                )}
+              </div>
+            )}
           </div>
         </section>
       ) : null}
 
       {/* グラフ領域 */}
       <section className="grid gap-4 lg:grid-cols-2">
-        {/* Weekly Activity Records */}
+        {/* Toilet Fail Rate Chart */}
         <div className="rounded-2xl bg-slate-900 p-5">
-          <h2 className="mb-1 text-sm font-semibold">Weekly Activity Records</h2>
-          <p className="mb-4 text-xs text-slate-400">Activity count for the past {days} days</p>
-          <div className="flex h-64 items-end justify-between rounded-xl bg-slate-950/40 p-4 text-[10px]">
-            {activityRecords.length > 0 ? (
-              activityRecords.slice(-7).map((record) => {
-                const height = maxActivity > 0 ? (record.count / maxActivity) * 100 : 0;
-                const date = new Date(record.date);
-                const dayLabel = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()];
-                return (
-                  <div key={record.date} className="flex flex-1 flex-col items-center gap-2">
-                    <div className="flex w-full flex-col justify-end gap-1">
-                      <div
-                        className="w-full rounded-full bg-blue-500"
-                        style={{ height: `${height}%` }}
-                      />
-                    </div>
-                    <span className="text-slate-400">{dayLabel}</span>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-center text-slate-400 w-full">No data</div>
-            )}
-          </div>
+          <h2 className="mb-1 text-sm font-semibold">排泄失敗率</h2>
+          <p className="mb-4 text-xs text-slate-400">過去{days}日間のトイレ失敗率の推移</p>
+          {toiletFailRateData.length > 0 ? (
+            <ToiletFailRateChart data={toiletFailRateData} />
+          ) : (
+            <div className="flex h-64 items-center justify-center text-slate-400 text-sm">
+              データがありません
+            </div>
+          )}
         </div>
 
-        {/* Health Indicator Trends */}
+        {/* Bark at Night Chart */}
         <div className="rounded-2xl bg-slate-900 p-5">
-          <h2 className="mb-1 text-sm font-semibold">Health Indicator Trends</h2>
-          <p className="mb-4 text-xs text-slate-400">Weight and temperature changes</p>
-          <div className="flex h-64 flex-col justify-between rounded-xl bg-slate-950/40 p-4 text-[10px]">
-            {healthIndicators.length > 0 ? (
-              <div className="text-slate-400 text-center">
-                {healthIndicators.length} health indicator data points
-                <br />
-                (Graph display coming soon)
-              </div>
-            ) : (
-              <div className="text-center text-slate-400">No health indicator data</div>
-            )}
-          </div>
+          <h2 className="mb-1 text-sm font-semibold">夜間の鳴き声</h2>
+          <p className="mb-4 text-xs text-slate-400">過去{days}日間の夜間の鳴き声回数</p>
+          {barkNightData.length > 0 ? (
+            <BarkNightChart data={barkNightData} />
+          ) : (
+            <div className="flex h-64 items-center justify-center text-slate-400 text-sm">
+              データがありません
+            </div>
+          )}
         </div>
+      </section>
+
+      {/* Activity Heatmap and Concerns */}
+      <section className="grid gap-4 lg:grid-cols-5">
+        {/* Activity Heatmap */}
+        <div className="lg:col-span-2 rounded-2xl bg-slate-900 p-5">
+          <h2 className="mb-1 text-sm font-semibold">活動ヒートマップ</h2>
+          <p className="mb-4 text-xs text-slate-400">過去{days}日間のログ入力回数（色の濃さで表示）</p>
+          {activityHeatmapData.length > 0 ? (
+            <ActivityHeatmap data={activityHeatmapData} days={days} />
+          ) : (
+            <div className="text-center py-8 text-slate-400 text-sm">
+              データがありません
+            </div>
+          )}
+        </div>
+
+        {/* Concerns from RAG Messages */}
+        <div className="lg:col-span-3 rounded-2xl bg-slate-900 p-5">
+          <h2 className="mb-1 text-sm font-semibold">困りごと・質問</h2>
+          <p className="mb-4 text-xs text-slate-400">RAGチャットでの質問から</p>
+          <ConcernList messages={ragMessages} dogId={selectedDogId} />
+        </div>
+      </section>
+
+      {/* Custom Logs (Important Notes) */}
+      <section className="rounded-2xl bg-slate-900 p-5">
+        <h2 className="mb-1 text-sm font-semibold">重要事項</h2>
+        <p className="mb-4 text-xs text-slate-400">過去{days}日間のカスタムログ（重要な記録）</p>
+        <CustomLogList logs={customLogs} />
       </section>
     </div>
   );

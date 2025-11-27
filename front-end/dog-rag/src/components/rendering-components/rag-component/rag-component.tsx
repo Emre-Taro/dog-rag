@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { RagMessage } from '@/types';
 import Link from 'next/link';
 import { useAuth, getAuthHeaders } from '@/contexts/AuthContext';
+import { useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 
 const suggestions = [
@@ -20,6 +21,7 @@ const suggestions = [
 export function RagPage() {
   const { selectedDogId, selectedDog, dogs, setSelectedDogId } = useDog();
   const { token } = useAuth();
+  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<RagMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,6 +29,7 @@ export function RagPage() {
   const [weeklyData, setWeeklyData] = useState<any>(null);
   const [daysRange, setDaysRange] = useState('30');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -35,6 +38,17 @@ export function RagPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Handle dogId from query params
+  useEffect(() => {
+    const dogIdParam = searchParams.get('dogId');
+    if (dogIdParam && !selectedDogId) {
+      const dogId = parseInt(dogIdParam);
+      if (!isNaN(dogId)) {
+        setSelectedDogId(dogId);
+      }
+    }
+  }, [searchParams, selectedDogId, setSelectedDogId]);
 
   // Load message history from database when dog is selected
   useEffect(() => {
@@ -90,6 +104,25 @@ export function RagPage() {
 
     loadMessages();
   }, [selectedDogId, token]);
+
+  // Scroll to specific message if messageId is in query params
+  useEffect(() => {
+    const messageId = searchParams.get('messageId');
+    if (messageId && messages.length > 0) {
+      // Wait a bit for messages to render
+      setTimeout(() => {
+        const messageElement = messageRefs.current[messageId];
+        if (messageElement) {
+          messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Highlight the message briefly
+          messageElement.classList.add('ring-2', 'ring-blue-500');
+          setTimeout(() => {
+            messageElement.classList.remove('ring-2', 'ring-blue-500');
+          }, 2000);
+        }
+      }, 300);
+    }
+  }, [searchParams, messages]);
 
   const handleSend = async () => {
     if (!input.trim() || loading || !selectedDogId) return;
@@ -298,7 +331,13 @@ export function RagPage() {
       <section className="flex min-h-0 flex-1 flex-col rounded-xl bg-slate-900 p-3">
         <div className="flex-1 space-y-2 overflow-y-auto">
           {messages.map((m) => (
-            <div key={m.id} className="flex flex-col gap-0.5">
+            <div
+              key={m.id}
+              ref={(el) => {
+                messageRefs.current[m.id] = el;
+              }}
+              className="flex flex-col gap-0.5 transition-all"
+            >
               <div className="flex items-center gap-1.5 text-xs text-slate-400">
                 <span>{m.role === 'assistant' ? 'AI' : 'You'}</span>
                 <span>・</span>
