@@ -9,15 +9,15 @@ import { DogLog, LogType } from '@/types';
 import Link from 'next/link';
 
 const LOG_TYPE_LABELS: Record<LogType, string> = {
-  toilet: '排泄',
-  food: '食事',
-  sleep: '睡眠',
-  walk: '散歩',
-  play: '遊び',
-  bark: '吠える',
-  custom: 'カスタム',
-  medication: '投薬',
-  consultation: '診察',
+  toilet: 'Toilet',
+  food: 'Food',
+  sleep: 'Sleep',
+  walk: 'Walk',
+  play: 'Play',
+  bark: 'Bark',
+  custom: 'Custom',
+  medication: 'Medication',
+  consultation: 'Consultation',
 };
 
 const LOG_TYPE_EMOJIS: Record<LogType, string> = {
@@ -128,7 +128,7 @@ export function RecordPage() {
       document.body.removeChild(a);
     } catch (error) {
       console.error('Error exporting logs:', error);
-      alert('エクスポートに失敗しました');
+      alert('Export failed');
     }
   };
 
@@ -138,7 +138,7 @@ export function RecordPage() {
   };
 
   const handleDelete = async (logId: string, logType?: LogType) => {
-    if (!confirm('この記録を削除しますか？')) return;
+    if (!confirm('Are you sure you want to delete this record?')) return;
 
     try {
       const url = logType ? `/api/logs/${logId}?log_type=${logType}` : `/api/logs/${logId}`;
@@ -151,11 +151,11 @@ export function RecordPage() {
       if (result.success) {
         fetchLogs();
       } else {
-        alert('削除に失敗しました: ' + result.error);
+        alert('Failed to delete: ' + result.error);
       }
     } catch (error) {
       console.error('Error deleting log:', error);
-      alert('削除中にエラーが発生しました');
+      alert('An error occurred while deleting');
     }
   };
 
@@ -163,29 +163,29 @@ export function RecordPage() {
     const data = log.log_data as any;
     switch (log.log_type) {
       case 'toilet':
-        const toiletTypeLabels: Record<string, string> = { ONE: '排尿', TWO: '排便', BOTH: '両方' };
-        const healthLabels: Record<string, string> = { NORMAL: '普通', SOFT: '柔らかい', HARD: '硬い', BLOODY: '血が混じる', OTHER: 'その他' };
-        return `${toiletTypeLabels[data.type] || data.type}・${data.success ? '成功' : '失敗'}・${healthLabels[data.health] || data.health || '普通'}`;
+        const toiletTypeLabels: Record<string, string> = { ONE: 'Urination', TWO: 'Defecation', BOTH: 'Both' };
+        const healthLabels: Record<string, string> = { NORMAL: 'Normal', SOFT: 'Soft', HARD: 'Hard', BLOODY: 'Bloody', OTHER: 'Other' };
+        return `${toiletTypeLabels[data.type] || data.type}・${data.success ? 'Success' : 'Failed'}・${healthLabels[data.health] || data.health || 'Normal'}`;
       case 'food':
-        const mealLabels: Record<string, string> = { BREAKFAST: '朝食', LUNCH: '昼食', DINNER: '夕食', SNACK: 'おやつ' };
-        const eatenAmountLabels: Record<string, string> = { ALL: '完食', HALF: '半分', LITTLE: '少し', all: '完食', half: '半分', little: '少し' };
+        const mealLabels: Record<string, string> = { BREAKFAST: 'Breakfast', LUNCH: 'Lunch', DINNER: 'Dinner', SNACK: 'Snack' };
+        const eatenAmountLabels: Record<string, string> = { ALL: 'All', HALF: 'Half', LITTLE: 'Little', all: 'All', half: 'Half', little: 'Little' };
         const mealType = data.mealType || data.meal_type;
         const eatenAmount = data.eatenAmount || data.completion;
         const amountGrams = data.amountGrams || data.amount;
         return `${mealLabels[mealType] || mealType}・${eatenAmount ? eatenAmountLabels[eatenAmount] || eatenAmount : 'N/A'}・${amountGrams ? `${amountGrams}g` : 'N/A'}`;
       case 'sleep':
-        return `${data.durationMinutes || data.duration}分`;
+        return `${data.durationMinutes || data.duration} min`;
       case 'walk':
         const distanceKm = data.distanceKm || data.distance;
-        return `${data.minutes}分・${distanceKm ? `${distanceKm}km` : 'N/A'}・${data.weather || 'N/A'}`;
+        return `${data.minutes} min・${distanceKm ? `${distanceKm} km` : 'N/A'}・${data.weather || 'N/A'}`;
       case 'play':
-        const activityLabels: Record<string, string> = { RUN: '走る', PULL: '引っ張る', CUDDLE: '抱っこ', LICK: '舐める', OTHER: 'その他' };
-        return `${data.minutes}分・${activityLabels[data.playType || data.activity] || data.playType || data.activity || 'N/A'}`;
+        const activityLabels: Record<string, string> = { RUN: 'Run', PULL: 'Pull', CUDDLE: 'Cuddle', LICK: 'Lick', OTHER: 'Other' };
+        return `${data.minutes} min・${activityLabels[data.playType || data.activity] || data.playType || data.activity || 'N/A'}`;
       case 'bark':
         const difficulty = data.difficulty || data.calm_down_difficulty;
-        return `落ち着かせる難しさ: ${difficulty}/5`;
+        return `Calming difficulty: ${difficulty}/5`;
       case 'custom':
-        return `${data.title || 'カスタム'}${data.content ? `: ${data.content}` : ''}`;
+        return `${data.title || 'Custom'}${data.content ? `: ${data.content}` : ''}`;
       default:
         return JSON.stringify(data).substring(0, 100);
     }
@@ -205,10 +205,10 @@ export function RecordPage() {
     return (
       <div className="flex flex-1 items-center justify-center">
         <div className="text-center text-slate-400">
-          <p className="mb-4">ペットを選択してください</p>
+          <p className="mb-4">Please select a pet</p>
           {dogs.length === 0 && (
             <Link href="/dog-profile">
-              <Button>ペットを追加</Button>
+              <Button>Add a pet</Button>
             </Link>
           )}
         </div>
@@ -220,8 +220,8 @@ export function RecordPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">記録一覧</h1>
-          <p className="text-sm text-slate-400">すべての活動記録を管理</p>
+          <h1 className="text-2xl font-bold">Record List</h1>
+          <p className="text-sm text-slate-400">Manage all activity records</p>
         </div>
         <div className="flex gap-3">
           <select
@@ -236,25 +236,25 @@ export function RecordPage() {
             ))}
           </select>
           <Button variant="ghost" onClick={handleExport}>
-            エクスポート
+            Export
           </Button>
           <Button onClick={() => {
             setEditingLog(null);
             setShowForm(true);
           }}>
-            ＋ 新規記録
+            ＋ New Record
           </Button>
         </div>
       </div>
 
-      {/* フィルター */}
+      {/* Filter */}
       <section className="space-y-4 rounded-2xl bg-slate-900 p-5">
         <div className="flex flex-wrap items-center gap-3">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="🔍 記録を検索..."
+            placeholder="🔍 Search records..."
             className="flex-1 rounded-lg bg-slate-950/40 px-3 py-2 text-xs text-slate-200 placeholder:text-slate-400"
           />
           <select
@@ -262,7 +262,7 @@ export function RecordPage() {
             onChange={(e) => setFilterType(e.target.value as LogType | 'all')}
             className="rounded-lg bg-slate-950/40 px-3 py-2 text-xs text-slate-200"
           >
-            <option value="all">すべての種類</option>
+            <option value="all">All Types</option>
             {Object.entries(LOG_TYPE_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -274,29 +274,29 @@ export function RecordPage() {
             onChange={(e) => setFilterDays(e.target.value)}
             className="rounded-lg bg-slate-950/40 px-3 py-2 text-xs text-slate-200"
           >
-            <option value="7">過去7日間</option>
-            <option value="30">過去30日間</option>
-            <option value="90">過去90日間</option>
-            <option value="365">過去1年間</option>
-            <option value="9999">すべて</option>
+            <option value="7">Past 7 days</option>
+            <option value="30">Past 30 days</option>
+            <option value="90">Past 90 days</option>
+            <option value="365">Past year</option>
+            <option value="9999">All</option>
           </select>
         </div>
 
-        {/* テーブル */}
+        {/* Table */}
         {loading ? (
-          <div className="text-center py-8 text-slate-400">読み込み中...</div>
+          <div className="text-center py-8 text-slate-400">Loading...</div>
         ) : logs.length === 0 ? (
-          <div className="text-center py-8 text-slate-400">記録が見つかりません</div>
+          <div className="text-center py-8 text-slate-400">No records found</div>
         ) : (
           <div className="overflow-hidden rounded-xl border border-slate-800">
             <table className="min-w-full text-left text-xs">
               <thead className="bg-slate-900">
                 <tr className="text-slate-400">
-                  <th className="px-4 py-3">種類</th>
-                  <th className="px-4 py-3">詳細</th>
-                  <th className="px-4 py-3">日時</th>
-                  <th className="px-4 py-3">ペット</th>
-                  <th className="px-2 py-3 w-12">操作</th>
+                  <th className="px-4 py-3">Type</th>
+                  <th className="px-4 py-3">Details</th>
+                  <th className="px-4 py-3">Date & Time</th>
+                  <th className="px-4 py-3">Pet</th>
+                  <th className="px-2 py-3 w-12">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800 bg-slate-950/40">
@@ -328,7 +328,7 @@ export function RecordPage() {
                           className={`text-slate-400 hover:text-slate-200 text-xl font-bold leading-none px-2 py-1 transition-colors rounded ${
                             showMenu === log.id ? 'bg-slate-800 text-slate-200' : ''
                           }`}
-                          title="メニュー"
+                          title="Menu"
                         >
                           ⋯
                         </button>
@@ -341,7 +341,7 @@ export function RecordPage() {
                               }}
                               className="block w-full px-3 py-2 text-left text-xs text-slate-200 hover:bg-slate-700 first:rounded-t-lg"
                             >
-                              編集
+                              Edit
                             </button>
                             <button
                               onClick={() => {
@@ -350,7 +350,7 @@ export function RecordPage() {
                               }}
                               className="block w-full px-3 py-2 text-left text-xs text-red-400 hover:bg-slate-700 last:rounded-b-lg"
                             >
-                              削除
+                              Delete
                             </button>
                           </div>
                         )}
@@ -364,7 +364,7 @@ export function RecordPage() {
         )}
       </section>
 
-      {/* 新規記録/編集フォーム */}
+      {/* New Record/Edit Form */}
       {showForm && editingLog && (
         <LogEntryForm
           logType={editingLog.log_type}

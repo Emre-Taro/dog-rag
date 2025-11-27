@@ -12,12 +12,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <AuthGuard>
-      <div className="flex min-h-screen bg-slate-950 text-slate-50">
+      <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-50">
         <Sidebar />
 
-        <div className="flex min-h-screen flex-1 flex-col bg-slate-950">
+        <div className="flex flex-1 flex-col overflow-hidden bg-slate-950">
           {/* ヘッダー */}
-          <header className="flex items-center justify-between border-b border-slate-800 px-8 py-4">
+          <header className="flex shrink-0 items-center justify-between border-b border-slate-800 px-8 py-4">
             <div className="text-sm text-slate-400">ペットの健康状態を一元管理</div>
             <div className="flex items-center gap-4">
               {selectedDog && (

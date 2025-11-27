@@ -81,7 +81,7 @@ export function DashboardPage() {
       document.body.removeChild(a);
     } catch (error) {
       console.error('Error exporting CSV:', error);
-      alert('エクスポートに失敗しました');
+      alert('Export failed');
     }
   };
 
@@ -89,10 +89,10 @@ export function DashboardPage() {
     return (
       <div className="flex flex-1 items-center justify-center">
         <div className="text-center text-slate-400">
-          <p className="mb-4">ペットを選択してください</p>
+          <p className="mb-4">Please select a pet</p>
           {dogs.length === 0 && (
             <Link href="/dog-profile">
-              <Button>ペットを追加</Button>
+              <Button>Add a pet</Button>
             </Link>
           )}
         </div>
@@ -106,8 +106,8 @@ export function DashboardPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">分析・レポート</h1>
-          <p className="text-sm text-slate-400">健康状態の推移と傾向を可視化</p>
+          <h1 className="text-2xl font-bold">Analysis & Reports</h1>
+          <p className="text-sm text-slate-400">Visualize health trends and patterns</p>
         </div>
         <div className="flex items-center gap-3 text-xs">
           <select
@@ -126,10 +126,10 @@ export function DashboardPage() {
             onChange={(e) => setDays(parseInt(e.target.value))}
             className="rounded-lg bg-slate-900 px-3 py-2 text-slate-200"
           >
-            <option value="7">過去7日間</option>
-            <option value="30">過去30日間</option>
-            <option value="90">過去90日間</option>
-            <option value="365">過去1年間</option>
+            <option value="7">Past 7 days</option>
+            <option value="30">Past 30 days</option>
+            <option value="90">Past 90 days</option>
+            <option value="365">Past year</option>
           </select>
           <Button variant="ghost" onClick={handleExportCSV}>
             CSV
@@ -137,9 +137,9 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* サマリーカード */}
+      {/* Summary Cards */}
       {loading ? (
-        <div className="text-center py-8 text-slate-400">読み込み中...</div>
+        <div className="text-center py-8 text-slate-400">Loading...</div>
       ) : stats ? (
         <section className="grid gap-4 md:grid-cols-4">
           <div className="rounded-2xl bg-slate-900 p-4 text-xs text-slate-300">
@@ -152,7 +152,7 @@ export function DashboardPage() {
                 {stats.period_comparison?.records_change || 0}%
               </span>
             </div>
-            <div className="text-[11px] text-slate-400">総記録数</div>
+            <div className="text-[11px] text-slate-400">Total Records</div>
             <div className="mt-1 text-xl font-semibold text-slate-50">{stats.total_records}</div>
           </div>
 
@@ -166,8 +166,8 @@ export function DashboardPage() {
                 {stats.period_comparison?.walk_time_change || 0}%
               </span>
             </div>
-            <div className="text-[11px] text-slate-400">平均散歩時間</div>
-            <div className="mt-1 text-xl font-semibold text-slate-50">{stats.average_walk_time}分</div>
+            <div className="text-[11px] text-slate-400">Avg Walk Time</div>
+            <div className="mt-1 text-xl font-semibold text-slate-50">{stats.average_walk_time} min</div>
           </div>
 
           <div className="rounded-2xl bg-slate-900 p-4 text-xs text-slate-300">
@@ -186,7 +186,7 @@ export function DashboardPage() {
                 {stats.period_comparison?.meal_rate_change || 0}%
               </span>
             </div>
-            <div className="text-[11px] text-slate-400">食事完食率</div>
+            <div className="text-[11px] text-slate-400">Meal Completion Rate</div>
             <div className="mt-1 text-xl font-semibold text-slate-50">{stats.meal_completion_rate}%</div>
           </div>
 
@@ -195,26 +195,26 @@ export function DashboardPage() {
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800">
                 ⚠️
               </div>
-              <span className="text-xs font-semibold text-red-400">要確認</span>
+              <span className="text-xs font-semibold text-red-400">Needs Review</span>
             </div>
-            <div className="text-[11px] text-slate-400">異常検知</div>
-            <div className="mt-1 text-xl font-semibold text-slate-50">{stats.anomaly_detections}件</div>
+            <div className="text-[11px] text-slate-400">Anomaly Detections</div>
+            <div className="mt-1 text-xl font-semibold text-slate-50">{stats.anomaly_detections}</div>
           </div>
         </section>
       ) : null}
 
       {/* グラフ領域 */}
       <section className="grid gap-4 lg:grid-cols-2">
-        {/* 週間活動記録 */}
+        {/* Weekly Activity Records */}
         <div className="rounded-2xl bg-slate-900 p-5">
-          <h2 className="mb-1 text-sm font-semibold">週間活動記録</h2>
-          <p className="mb-4 text-xs text-slate-400">過去{days}日間の活動回数</p>
+          <h2 className="mb-1 text-sm font-semibold">Weekly Activity Records</h2>
+          <p className="mb-4 text-xs text-slate-400">Activity count for the past {days} days</p>
           <div className="flex h-64 items-end justify-between rounded-xl bg-slate-950/40 p-4 text-[10px]">
             {activityRecords.length > 0 ? (
               activityRecords.slice(-7).map((record) => {
                 const height = maxActivity > 0 ? (record.count / maxActivity) * 100 : 0;
                 const date = new Date(record.date);
-                const dayLabel = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
+                const dayLabel = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getDay()];
                 return (
                   <div key={record.date} className="flex flex-1 flex-col items-center gap-2">
                     <div className="flex w-full flex-col justify-end gap-1">
@@ -228,24 +228,24 @@ export function DashboardPage() {
                 );
               })
             ) : (
-              <div className="text-center text-slate-400 w-full">データがありません</div>
+              <div className="text-center text-slate-400 w-full">No data</div>
             )}
           </div>
         </div>
 
-        {/* 健康指標の推移 */}
+        {/* Health Indicator Trends */}
         <div className="rounded-2xl bg-slate-900 p-5">
-          <h2 className="mb-1 text-sm font-semibold">健康指標の推移</h2>
-          <p className="mb-4 text-xs text-slate-400">体重と体温の変化</p>
+          <h2 className="mb-1 text-sm font-semibold">Health Indicator Trends</h2>
+          <p className="mb-4 text-xs text-slate-400">Weight and temperature changes</p>
           <div className="flex h-64 flex-col justify-between rounded-xl bg-slate-950/40 p-4 text-[10px]">
             {healthIndicators.length > 0 ? (
               <div className="text-slate-400 text-center">
-                {healthIndicators.length}件の健康指標データ
+                {healthIndicators.length} health indicator data points
                 <br />
-                (グラフ表示は今後実装予定)
+                (Graph display coming soon)
               </div>
             ) : (
-              <div className="text-center text-slate-400">健康指標データがありません</div>
+              <div className="text-center text-slate-400">No health indicator data</div>
             )}
           </div>
         </div>

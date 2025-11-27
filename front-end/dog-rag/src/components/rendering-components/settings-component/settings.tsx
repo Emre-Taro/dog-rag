@@ -32,18 +32,18 @@ export function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">設定</h1>
-        <p className="text-sm text-slate-400">アカウントと通知設定を管理</p>
+        <h1 className="text-2xl font-bold">Settings</h1>
+        <p className="text-sm text-slate-400">Manage account and notification settings</p>
       </div>
 
-      {/* プロフィール */}
+      {/* Profile */}
       <section className="rounded-2xl bg-slate-900 p-5">
-        <h2 className="mb-1 text-sm font-semibold">プロフィール</h2>
-        <p className="mb-4 text-xs text-slate-400">アカウント情報を管理します</p>
+        <h2 className="mb-1 text-sm font-semibold">Profile</h2>
+        <p className="mb-4 text-xs text-slate-400">Manage account information</p>
 
         <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-xs text-slate-400">お名前</label>
+            <label className="mb-1 block text-xs text-slate-400">Name</label>
             <input
               type="text"
               value={profile.name}
@@ -52,7 +52,7 @@ export function SettingsPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-slate-400">メールアドレス</label>
+            <label className="mb-1 block text-xs text-slate-400">Email Address</label>
             <input
               type="email"
               value={profile.email}
@@ -61,7 +61,7 @@ export function SettingsPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-slate-400">組織</label>
+            <label className="mb-1 block text-xs text-slate-400">Organization</label>
             <input
               type="text"
               value={profile.organization}
@@ -70,21 +70,21 @@ export function SettingsPage() {
             />
           </div>
           <Button onClick={handleSave} disabled={loading}>
-            {loading ? '保存中...' : saved ? '保存しました！' : '変更を保存'}
+            {loading ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}
           </Button>
         </div>
       </section>
 
-      {/* 通知設定 */}
+      {/* Notification Settings */}
       <section className="rounded-2xl bg-slate-900 p-5">
-        <h2 className="mb-1 text-sm font-semibold">通知設定</h2>
-        <p className="mb-4 text-xs text-slate-400">アラートとリマインダーの設定</p>
+        <h2 className="mb-1 text-sm font-semibold">Notification Settings</h2>
+        <p className="mb-4 text-xs text-slate-400">Configure alerts and reminders</p>
 
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm text-slate-100">メール通知</div>
-              <div className="text-xs text-slate-400">重要なアラートをメールで受信</div>
+              <div className="text-sm text-slate-100">Email Notifications</div>
+              <div className="text-xs text-slate-400">Receive important alerts via email</div>
             </div>
             <button
               onClick={() => setNotifications({ ...notifications, email: !notifications.email })}
@@ -102,8 +102,8 @@ export function SettingsPage() {
 
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm text-slate-100">異常検知アラート</div>
-              <div className="text-xs text-slate-400">健康異常を検知した際に通知</div>
+              <div className="text-sm text-slate-100">Anomaly Detection Alerts</div>
+              <div className="text-xs text-slate-400">Notify when health anomalies are detected</div>
             </div>
             <button
               onClick={() => setNotifications({ ...notifications, anomaly: !notifications.anomaly })}
@@ -121,8 +121,8 @@ export function SettingsPage() {
 
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm text-slate-100">記録リマインダー</div>
-              <div className="text-xs text-slate-400">定期的な記録を促す通知</div>
+              <div className="text-sm text-slate-100">Record Reminders</div>
+              <div className="text-xs text-slate-400">Notifications to encourage regular recording</div>
             </div>
             <button
               onClick={() => setNotifications({ ...notifications, reminder: !notifications.reminder })}
@@ -140,17 +140,17 @@ export function SettingsPage() {
         </div>
       </section>
 
-      {/* 通知頻度 */}
+      {/* Notification Frequency */}
       <section className="rounded-2xl bg-slate-900 p-5">
-        <h2 className="mb-4 text-sm font-semibold">通知頻度</h2>
+        <h2 className="mb-4 text-sm font-semibold">Notification Frequency</h2>
         <select
           value={frequency}
           onChange={(e) => setFrequency(e.target.value)}
           className="rounded-lg bg-slate-950/40 px-3 py-2 text-sm text-slate-200"
         >
-          <option value="immediate">即時</option>
-          <option value="daily">毎日</option>
-          <option value="weekly">毎週</option>
+          <option value="immediate">Immediate</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
         </select>
       </section>
     </div>
