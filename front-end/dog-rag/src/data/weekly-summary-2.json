@@ -1,0 +1,16 @@
+{
+  "dogId": 2,
+  "dogName": "pochi",
+  "weeks": [
+    {
+      "period": "2025-11-16 〜 2025-11-23",
+      "summary": "Here is pochi's weekly summary for the period 2025-11-16 to 2025-11-23.\n\n【Toilet】\nThere were no toilet-related records for this week.\n\n【Barking】\nThere was no notable nighttime barking. It was a calm week overall.\n\nThis concludes the weekly summary for pochi.\nIf any concerning patterns continue, please keep monitoring them along with next week's records.",
+      "texts": []
+    },
+    {
+      "period": "2025-11-23 〜 2025-11-30",
+      "summary": "Here is pochi's weekly summary for the period 2025-11-23 to 2025-11-30.\n\n【Toilet】\nThere were no toilet-related records for this week.\n\n【Barking】\nThere was no notable nighttime barking. It was a calm week overall.\n\nThis concludes the weekly summary for pochi.\nIf any concerning patterns continue, please keep monitoring them along with next week's records.",
+      "texts": []
+    }
+  ]
+}

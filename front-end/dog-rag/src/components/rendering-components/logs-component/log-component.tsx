@@ -10,13 +10,13 @@ import { LogType, DogLog, LogData } from '@/types';
 import Link from 'next/link';
 
 const QUICK_RECORD_TYPES: Array<{ label: string; emoji: string; type: LogType }> = [
-  { label: '排泄', emoji: '💧', type: 'toilet' },
-  { label: '食事', emoji: '🍽️', type: 'food' },
-  { label: '散歩', emoji: '🚶‍♂️', type: 'walk' },
-  { label: '遊び', emoji: '🎾', type: 'play' },
-  { label: '睡眠', emoji: '😴', type: 'sleep' },
-  { label: '吠える', emoji: '🐕', type: 'bark' },
-  { label: 'カスタム', emoji: '➕', type: 'custom' },
+  { label: 'Toilet', emoji: '💧', type: 'toilet' },
+  { label: 'Food', emoji: '🍽️', type: 'food' },
+  { label: 'Walk', emoji: '🚶‍♂️', type: 'walk' },
+  { label: 'Play', emoji: '🎾', type: 'play' },
+  { label: 'Sleep', emoji: '😴', type: 'sleep' },
+  { label: 'Bark', emoji: '🐕', type: 'bark' },
+  { label: 'Custom', emoji: '➕', type: 'custom' },
 ];
 
 export function LogPage() {
@@ -100,7 +100,7 @@ export function LogPage() {
   };
 
   const handleDeleteLog = async (logId: string, logType?: LogType) => {
-    if (!confirm('この記録を削除しますか？')) return;
+    if (!confirm('Are you sure you want to delete this record?')) return;
 
     setDeleteLoading(logId);
     try {
@@ -114,11 +114,11 @@ export function LogPage() {
       if (result.success) {
         fetchTodayLogs();
       } else {
-        alert('削除に失敗しました: ' + result.error);
+        alert('Failed to delete: ' + result.error);
       }
     } catch (error) {
       console.error('Error deleting log:', error);
-      alert('削除中にエラーが発生しました');
+      alert('An error occurred while deleting');
     } finally {
       setDeleteLoading(null);
     }
@@ -139,36 +139,36 @@ export function LogPage() {
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return 'たった今';
-    if (diffMins < 60) return `${diffMins}分前`;
-    if (diffHours < 24) return `${diffHours}時間前`;
-    return `${diffDays}日前`;
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    return `${diffDays} days ago`;
   };
 
   const formatLogDetails = (log: DogLog): string => {
     const data = log.log_data as any;
     switch (log.log_type) {
       case 'toilet':
-        const toiletTypeLabels: Record<string, string> = { ONE: '排尿', TWO: '排便', BOTH: '両方' };
-        const healthLabels: Record<string, string> = { NORMAL: '普通', SOFT: '柔らかい', HARD: '硬い', BLOODY: '血が混じる', OTHER: 'その他' };
-        return `${toiletTypeLabels[data.type] || data.type}・${data.success ? '成功' : '失敗'}・${healthLabels[data.health] || data.health || '普通'}`;
+        const toiletTypeLabels: Record<string, string> = { ONE: 'Urination', TWO: 'Defecation', BOTH: 'Both' };
+        const healthLabels: Record<string, string> = { NORMAL: 'Normal', SOFT: 'Soft', HARD: 'Hard', BLOODY: 'Bloody', OTHER: 'Other' };
+        return `${toiletTypeLabels[data.type] || data.type}・${data.success ? 'Success' : 'Failed'}・${healthLabels[data.health] || data.health || 'Normal'}`;
       case 'food':
-        const mealLabels: Record<string, string> = { BREAKFAST: '朝食', LUNCH: '昼食', DINNER: '夕食', SNACK: 'おやつ' };
-        const eatenAmountLabels: Record<string, string> = { ALL: '完食', HALF: '半分', LITTLE: '少し', all: '完食', half: '半分', little: '少し' };
+        const mealLabels: Record<string, string> = { BREAKFAST: 'Breakfast', LUNCH: 'Lunch', DINNER: 'Dinner', SNACK: 'Snack' };
+        const eatenAmountLabels: Record<string, string> = { ALL: 'All', HALF: 'Half', LITTLE: 'Little', all: 'All', half: 'Half', little: 'Little' };
         const mealType = data.mealType || data.meal_type;
         const eatenAmount = data.eatenAmount || data.completion;
         const amountGrams = data.amountGrams || data.amount;
         return `${mealLabels[mealType] || mealType}・${eatenAmount ? eatenAmountLabels[eatenAmount] || eatenAmount : 'N/A'}・${amountGrams ? `${amountGrams}g` : 'N/A'}`;
       case 'sleep':
-        return `${data.durationMinutes || data.duration}分`;
+        return `${data.durationMinutes || data.duration} min`;
       case 'walk':
         const distanceKm = data.distanceKm || data.distance;
-        return `${data.minutes}分・${distanceKm ? `${distanceKm}km` : 'N/A'}・${getWeatherLabel(data.weather)}`;
+        return `${data.minutes} min・${distanceKm ? `${distanceKm} km` : 'N/A'}・${getWeatherLabel(data.weather)}`;
       case 'play':
-        return `${data.minutes}分・${getActivityLabel(data.playType || data.activity)}`;
+        return `${data.minutes} min・${getActivityLabel(data.playType || data.activity)}`;
       case 'bark':
         const difficulty = data.difficulty || data.calm_down_difficulty;
-        return `${getPeriodLabel(data.period)}・落ち着かせる難しさ: ${difficulty}/5`;
+        return `${getPeriodLabel(data.period)}・Calming difficulty: ${difficulty}/5`;
       case 'custom':
         return `${data.title}${data.content ? `: ${data.content}` : ''}`;
       default:
@@ -180,50 +180,50 @@ export function LogPage() {
     if (!weather) return 'N/A';
     const weatherLower = weather.toLowerCase();
     const labels: Record<string, string> = {
-      sunny: '晴れ',
-      hot: '暑い',
-      cool: '涼しい',
-      humid: '湿度が高い',
-      cold: '寒い',
-      rainy: '雨',
-      thunder: '雷',
+      sunny: 'Sunny',
+      hot: 'Hot',
+      cool: 'Cool',
+      humid: 'Humid',
+      cold: 'Cold',
+      rainy: 'Rainy',
+      thunder: 'Thunder',
     };
     return labels[weatherLower] || weather;
   };
 
   const getActivityLabel = (activity: string): string => {
     const labels: Record<string, string> = {
-      RUN: '走る',
-      PULL: '引っ張る',
-      CUDDLE: '抱っこ',
-      LICK: '舐める',
-      OTHER: 'その他',
+      RUN: 'Run',
+      PULL: 'Pull',
+      CUDDLE: 'Cuddle',
+      LICK: 'Lick',
+      OTHER: 'Other',
     };
     return labels[activity] || activity;
   };
 
   const getPeriodLabel = (period: string): string => {
     const labels: Record<string, string> = {
-      morning: '朝',
-      afternoon: '昼',
-      evening: '夕方',
-      night: '夜',
-      midnight: '深夜',
+      morning: 'Morning',
+      afternoon: 'Afternoon',
+      evening: 'Evening',
+      night: 'Night',
+      midnight: 'Midnight',
     };
     return labels[period] || period;
   };
 
   const getLogTypeLabel = (logType: LogType): string => {
     const labels: Record<LogType, string> = {
-      toilet: '排泄',
-      food: '食事',
-      sleep: '睡眠',
-      walk: '散歩',
-      play: '遊び',
-      bark: '吠える',
-      custom: 'カスタム',
-      medication: '投薬',
-      consultation: '診察',
+      toilet: 'Toilet',
+      food: 'Food',
+      sleep: 'Sleep',
+      walk: 'Walk',
+      play: 'Play',
+      bark: 'Bark',
+      custom: 'Custom',
+      medication: 'Medication',
+      consultation: 'Consultation',
     };
     return labels[logType] || logType;
   };
@@ -246,19 +246,19 @@ export function LogPage() {
   const formatAge = (months: number): string => {
     const years = Math.floor(months / 12);
     const remainingMonths = months % 12;
-    if (years === 0) return `${remainingMonths}ヶ月`;
-    if (remainingMonths === 0) return `${years}歳`;
-    return `${years}歳${remainingMonths}ヶ月`;
+    if (years === 0) return `${remainingMonths} months`;
+    if (remainingMonths === 0) return `${years} years`;
+    return `${years} years ${remainingMonths} months`;
   };
 
   if (!selectedDogId || !selectedDog) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <div className="text-center text-slate-400">
-          <p className="mb-4">ペットを選択してください</p>
+          <p className="mb-4">Please select a pet</p>
           {dogs.length === 0 && (
             <Link href="/dog-profile">
-              <Button>ペットを追加</Button>
+              <Button>Add a pet</Button>
             </Link>
           )}
         </div>
@@ -273,8 +273,8 @@ export function LogPage() {
         {/* ヘッダー - 犬選択 */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">ダッシュボード</h1>
-            <p className="text-sm text-slate-400">ペットの健康状態を一目で確認</p>
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <p className="text-sm text-slate-400">View your pet's health status at a glance</p>
           </div>
           <select
             value={selectedDogId || ''}
@@ -293,8 +293,8 @@ export function LogPage() {
         <section className="rounded-2xl bg-slate-900 p-5">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-semibold">クイック記録</h2>
-              <p className="text-xs text-slate-400">1タップで素早く記録できます</p>
+              <h2 className="text-sm font-semibold">Quick Record</h2>
+              <p className="text-xs text-slate-400">Record quickly with one tap</p>
             </div>
           </div>
 
@@ -313,13 +313,13 @@ export function LogPage() {
 
         {/* 今日の記録 */}
         <section className="rounded-2xl bg-slate-900 p-5">
-          <h2 className="mb-3 text-sm font-semibold">今日の記録</h2>
-          <p className="mb-4 text-xs text-slate-400">今日入力された活動履歴</p>
+          <h2 className="mb-3 text-sm font-semibold">Today's Records</h2>
+          <p className="mb-4 text-xs text-slate-400">Activity history entered today</p>
 
           {loading ? (
-            <div className="text-center text-slate-400">読み込み中...</div>
+            <div className="text-center text-slate-400">Loading...</div>
           ) : todayLogs.length === 0 ? (
-            <div className="text-center text-slate-400">今日の記録はまだありません</div>
+            <div className="text-center text-slate-400">No records for today yet</div>
           ) : (
             <div className="space-y-2">
               {todayLogs.map((log) => (
@@ -347,7 +347,7 @@ export function LogPage() {
                     <button
                       onClick={() => handleEditLog(log)}
                       className="rounded px-2 py-1 text-xs text-slate-400 hover:bg-slate-700 hover:text-slate-200"
-                      title="編集"
+                      title="Edit"
                     >
                       ✏️
                     </button>
@@ -355,7 +355,7 @@ export function LogPage() {
                       onClick={() => handleDeleteLog(log.id, log.log_type)}
                       disabled={deleteLoading === log.id}
                       className="rounded px-2 py-1 text-xs text-slate-400 hover:bg-slate-700 hover:text-red-300 disabled:opacity-50"
-                      title="削除"
+                      title="Delete"
                     >
                       {deleteLoading === log.id ? '...' : '🗑️'}
                     </button>
@@ -370,7 +370,7 @@ export function LogPage() {
       {/* 右側：ペット情報カード */}
       <aside className="w-80 space-y-4">
         <section className="rounded-2xl bg-slate-900 p-5">
-          <h2 className="mb-4 text-sm font-semibold">ペット情報</h2>
+          <h2 className="mb-4 text-sm font-semibold">Pet Information</h2>
           <div className="flex flex-col items-center gap-2">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-800 text-3xl">
               🐕
@@ -383,30 +383,30 @@ export function LogPage() {
 
           <dl className="mt-6 space-y-3 text-xs">
             <div className="flex justify-between">
-              <dt className="text-slate-400">年齢</dt>
+              <dt className="text-slate-400">Age</dt>
               <dd className="font-medium">{selectedDog.age ? formatAge(selectedDog.age) : 'N/A'}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-400">体重</dt>
+              <dt className="text-slate-400">Weight</dt>
               <dd className="font-medium">{selectedDog.weight ?? 'N/A'} kg</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-400">体高</dt>
+              <dt className="text-slate-400">Height</dt>
               <dd className="font-medium">{selectedDog.height ?? 'N/A'} cm</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-slate-400">犬種</dt>
+              <dt className="text-slate-400">Breed</dt>
               <dd className="font-medium">{selectedDog.breed || 'N/A'}</dd>
             </div>
           </dl>
 
           <Link href="/dog-profile">
-            <Button className="mt-6 w-full">詳細を見る</Button>
+            <Button className="mt-6 w-full">View Details</Button>
           </Link>
         </section>
       </aside>
 
-      {/* ログ入力フォームモーダル */}
+      {/* Log Entry Form Modal */}
       {showForm && formLogType && selectedDogId && (
         <LogEntryForm
           logType={formLogType}

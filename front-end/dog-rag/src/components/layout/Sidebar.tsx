@@ -4,26 +4,25 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const navItems = [
-  { href: '/input', label: 'ダッシュボード', icon: '📊' },
-  { href: '/records', label: '記録一覧', icon: '📋' },
-  { href: '/dashboard', label: '分析・レポート', icon: '📈' },
-  { href: '/dog-profile', label: 'ペット管理', icon: '🐾' },
-  { href: '/rag', label: 'AI相談', icon: '💬' },
-  { href: '/settings', label: '設定', icon: '⚙️' },
+  { href: '/input', label: 'Dashboard', icon: '📊' },
+  { href: '/records', label: 'Record List', icon: '📋' },
+  { href: '/dashboard', label: 'Analysis & Report', icon: '📈' },
+  { href: '/dog-profile', label: 'Pet Management', icon: '🐾' },
+  { href: '/rag', label: 'AI Consultation', icon: '💬' },
+  { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-64 flex-col bg-slate-900 text-slate-100">
+    <aside className="flex h-screen w-64 shrink-0 flex-col bg-slate-900 text-slate-100">
       <div className="flex items-center gap-3 px-5 pt-6 pb-4">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500">
           <span className="text-xl">🐶</span>
         </div>
         <div>
-          <div className="text-sm text-slate-300">リアルタイム管理</div>
-          <div className="text-base font-semibold">ペット健康管理</div>
+          <div className="text-base font-semibold">Pet Health Management</div>
         </div>
       </div>
 

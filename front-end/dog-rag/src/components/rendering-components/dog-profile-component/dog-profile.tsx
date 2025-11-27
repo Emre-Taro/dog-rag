@@ -20,7 +20,7 @@ export function DogProfilePage() {
   }, []);
 
   const handleDelete = async (dogId: number) => {
-    if (!confirm('このペットプロフィールを削除しますか？')) return;
+    if (!confirm('Are you sure you want to delete this pet profile?')) return;
 
     try {
       const response = await fetch(`/api/dogs/${dogId.toString()}`, {
@@ -41,28 +41,28 @@ export function DogProfilePage() {
           }
         }
       } else {
-        alert('削除に失敗しました: ' + result.error);
+        alert('Failed to delete: ' + result.error);
       }
     } catch (error) {
       console.error('Error deleting dog:', error);
-      alert('削除中にエラーが発生しました');
+      alert('An error occurred while deleting');
     }
   };
 
   const formatAge = (months: number): string => {
     const years = Math.floor(months / 12);
     const remainingMonths = months % 12;
-    if (years === 0) return `${remainingMonths}ヶ月`;
-    if (remainingMonths === 0) return `${years}歳`;
-    return `${years}歳${remainingMonths}ヶ月`;
+    if (years === 0) return `${remainingMonths} months`;
+    if (remainingMonths === 0) return `${years} years`;
+    return `${years} years ${remainingMonths} months`;
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">ペット管理</h1>
-          <p className="text-sm text-slate-400">担当ペットの情報を管理</p>
+          <h1 className="text-2xl font-bold">Pet Management</h1>
+          <p className="text-sm text-slate-400">Manage your pet information</p>
         </div>
         <div className="flex items-center gap-3 text-xs">
           <select
@@ -70,7 +70,7 @@ export function DogProfilePage() {
             onChange={(e) => setSelectedDogId(e.target.value ? parseInt(e.target.value) : null)}
             className="rounded-lg bg-slate-900 px-3 py-2 text-slate-200"
           >
-            <option value="">すべてのペット</option>
+            <option value="">All Pets</option>
             {dogs.map((dog) => (
               <option key={dog.id} value={dog.id}>
                 {dog.dogName}
@@ -83,15 +83,15 @@ export function DogProfilePage() {
               setShowForm(true);
             }}
           >
-            ＋ ペット追加
+            ＋ Add Pet
           </Button>
         </div>
       </div>
 
       {dogs.length === 0 ? (
         <div className="rounded-2xl bg-slate-900 p-12 text-center text-slate-400">
-          <p className="mb-4">ペットプロフィールがありません</p>
-          <Button onClick={() => setShowForm(true)}>ペットを追加</Button>
+          <p className="mb-4">No pet profiles</p>
+          <Button onClick={() => setShowForm(true)}>Add a pet</Button>
         </div>
       ) : (
         <section className="grid gap-4 lg:grid-cols-3">
@@ -111,11 +111,11 @@ export function DogProfilePage() {
                   </div>
                 </div>
                 <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[11px] text-blue-300">
-                  {dog.stageOfTraining === 'PUPPY' ? 'パピー' :
-                   dog.stageOfTraining === 'BASIC' ? '基礎訓練' :
-                   dog.stageOfTraining === 'INTERMEDIATE' ? '中級訓練' :
-                   dog.stageOfTraining === 'ADVANCED' ? '上級訓練' :
-                   dog.stageOfTraining === 'OTHER' ? 'その他' :
+                  {dog.stageOfTraining === 'PUPPY' ? 'Puppy' :
+                   dog.stageOfTraining === 'BASIC' ? 'Basic Training' :
+                   dog.stageOfTraining === 'INTERMEDIATE' ? 'Intermediate Training' :
+                   dog.stageOfTraining === 'ADVANCED' ? 'Advanced Training' :
+                   dog.stageOfTraining === 'OTHER' ? 'Other' :
                    dog.stageOfTraining}
                 </span>
               </div>
@@ -123,25 +123,25 @@ export function DogProfilePage() {
               <dl className="space-y-2 text-[11px]">
                 {dog.gender && (
                   <div className="flex justify-between">
-                    <dt className="text-slate-400">性別</dt>
-                    <dd className="text-slate-100">{dog.gender === 'MALE' ? 'オス' : dog.gender === 'FEMALE' ? 'メス' : dog.gender}</dd>
+                    <dt className="text-slate-400">Gender</dt>
+                    <dd className="text-slate-100">{dog.gender === 'MALE' ? 'Male' : dog.gender === 'FEMALE' ? 'Female' : dog.gender}</dd>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <dt className="text-slate-400">年齢</dt>
+                  <dt className="text-slate-400">Age</dt>
                   <dd className="text-slate-100">{dog.age ? formatAge(dog.age) : 'N/A'}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-slate-400">体重</dt>
+                  <dt className="text-slate-400">Weight</dt>
                   <dd className="text-slate-100">{dog.weight ?? 'N/A'} kg</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-slate-400">体高</dt>
+                  <dt className="text-slate-400">Height</dt>
                   <dd className="text-slate-100">{dog.height ?? 'N/A'} cm</dd>
                 </div>
                 {dog.personality && (
                   <div className="flex justify-between">
-                    <dt className="text-slate-400">性格</dt>
+                    <dt className="text-slate-400">Personality</dt>
                     <dd className="text-slate-100 truncate max-w-[150px]" title={dog.personality}>
                       {dog.personality}
                     </dd>
@@ -158,14 +158,14 @@ export function DogProfilePage() {
                     setShowForm(true);
                   }}
                 >
-                  編集
+                  Edit
                 </Button>
                 <Button
                   variant="ghost"
                   className="flex-1 text-red-400 hover:text-red-300"
                   onClick={() => handleDelete(dog.id)}
                 >
-                  削除
+                  Delete
                 </Button>
               </div>
             </article>
@@ -238,10 +238,10 @@ function DogProfileForm({
       if (result.success) {
         onSuccess();
       } else {
-        setError(result.error || '保存に失敗しました');
+        setError(result.error || 'Failed to save');
       }
     } catch (err) {
-      setError('エラーが発生しました');
+      setError('An error occurred');
       console.error(err);
     } finally {
       setLoading(false);
@@ -251,7 +251,7 @@ function DogProfileForm({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="w-full max-w-md rounded-2xl bg-slate-900 p-6 text-slate-100">
-        <h2 className="mb-4 text-lg font-semibold">{dog ? '編集' : '新規ペット追加'}</h2>
+        <h2 className="mb-4 text-lg font-semibold">{dog ? 'Edit' : 'Add New Pet'}</h2>
         {error && (
           <div className="mb-4 rounded-lg bg-red-500/20 px-4 py-2 text-sm text-red-300">
             {error}
@@ -259,7 +259,7 @@ function DogProfileForm({
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm">名前 *</label>
+            <label className="mb-1 block text-sm">Name *</label>
             <input
               type="text"
               value={formData.dogName}
@@ -270,19 +270,19 @@ function DogProfileForm({
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm">性別</label>
+            <label className="mb-1 block text-sm">Gender</label>
             <select
               value={formData.gender}
               onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
               className="w-full rounded-lg bg-slate-800 px-3 py-2"
             >
-              <option value="">選択してください</option>
-              <option value="MALE">オス</option>
-              <option value="FEMALE">メス</option>
+              <option value="">Please select</option>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm">年齢（月） *</label>
+            <label className="mb-1 block text-sm">Age (months) *</label>
             <input
               type="number"
               value={formData.age}
@@ -294,7 +294,7 @@ function DogProfileForm({
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm">体重 (kg) *</label>
+            <label className="mb-1 block text-sm">Weight (kg) *</label>
             <input
               type="number"
               step="0.1"
@@ -307,7 +307,7 @@ function DogProfileForm({
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm">体高 (cm) *</label>
+            <label className="mb-1 block text-sm">Height (cm) *</label>
             <input
               type="number"
               step="0.1"
@@ -320,7 +320,7 @@ function DogProfileForm({
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm">犬種 *</label>
+            <label className="mb-1 block text-sm">Breed *</label>
             <input
               type="text"
               value={formData.breed}
@@ -331,7 +331,7 @@ function DogProfileForm({
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm">性格</label>
+            <label className="mb-1 block text-sm">Personality</label>
             <textarea
               value={formData.personality}
               onChange={(e) => setFormData({ ...formData, personality: e.target.value })}
@@ -341,27 +341,27 @@ function DogProfileForm({
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm">訓練段階 *</label>
+            <label className="mb-1 block text-sm">Training Stage *</label>
             <select
               value={formData.stageOfTraining}
               onChange={(e) => setFormData({ ...formData, stageOfTraining: e.target.value })}
               className="w-full rounded-lg bg-slate-800 px-3 py-2"
               required
             >
-              <option value="">選択してください</option>
-              <option value="PUPPY">パピー</option>
-              <option value="BASIC">基礎訓練</option>
-              <option value="INTERMEDIATE">中級訓練</option>
-              <option value="ADVANCED">上級訓練</option>
-              <option value="OTHER">その他</option>
+              <option value="">Please select</option>
+              <option value="PUPPY">Puppy</option>
+              <option value="BASIC">Basic Training</option>
+              <option value="INTERMEDIATE">Intermediate Training</option>
+              <option value="ADVANCED">Advanced Training</option>
+              <option value="OTHER">Other</option>
             </select>
           </div>
           <div className="flex gap-2">
             <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? '保存中...' : '保存'}
+              {loading ? 'Saving...' : 'Save'}
             </Button>
             <Button type="button" variant="ghost" onClick={onClose} className="flex-1">
-              キャンセル
+              Cancel
             </Button>
           </div>
         </form>

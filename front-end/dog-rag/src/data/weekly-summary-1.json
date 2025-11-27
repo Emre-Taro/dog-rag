@@ -1,0 +1,28 @@
+{
+  "dogId": 1,
+  "dogName": "Lili",
+  "weeks": [
+    {
+      "period": "2025-11-16 〜 2025-11-23",
+      "summary": "Here is Lili's weekly summary for the period 2025-11-16 to 2025-11-23.\n\n【Toilet】\nThe toilet training failure rate this week was 0%. If the number of accidents increases over consecutive days, it may be worth reviewing the daily routine or checking your dog's physical condition.\n\n【Meals】\nYour dog ate an average of 30g of food per day. Appetite appears to be relatively stable, but if there were days with less intake than usual, factors such as physical condition or mood may have influenced it.\n\n【Walks & Activity】\nWalks averaged 9 minutes per day, covering approximately 0.1 km. If this is significantly more or less than usual, it may indicate a change in activity level.\n\n【Sleep】\nYour dog slept an average of 0.83 hours per day. If there were days with notably less sleep, stress or environmental changes might be affecting their rest.\n\n【Barking】\nThere was no notable nighttime barking. It was a calm week overall.\n\nThis concludes the weekly summary for Lili.\nIf any concerning patterns continue, please keep monitoring them along with next week's records.",
+      "texts": [
+        "2025-11-20 [bark] She was sleeping",
+        "2025-11-20 [food] Since she barked a lot we gave him food a bit earlier",
+        "2025-11-20 [play] She licked us with smellly tounge",
+        "2025-11-20 [sleep] She slept doe 2 hours",
+        "2025-11-20 [bark] She woke up",
+        "2025-11-20 [food] She ate so fast",
+        "2025-11-20 [bark] She had some dinner",
+        "2025-11-20 [food] She barks so much",
+        "2025-11-20 [walk] we walked in the house since outside was rainy"
+      ]
+    },
+    {
+      "period": "2025-11-23 〜 2025-11-30",
+      "summary": "Here is Lili's weekly summary for the period 2025-11-23 to 2025-11-30.\n\n【Toilet】\nThe toilet training failure rate this week was 0%. If the number of accidents increases over consecutive days, it may be worth reviewing the daily routine or checking your dog's physical condition.\n\n【Sleep】\nYour dog slept an average of 0.5 hours per day. If there were days with notably less sleep, stress or environmental changes might be affecting their rest.\n\n【Barking】\nThere was no notable nighttime barking. It was a calm week overall.\n\nThis concludes the weekly summary for Lili.\nIf any concerning patterns continue, please keep monitoring them along with next week's records.",
+      "texts": [
+        "2025-11-25 [custom] food amount increased to 100g: From today, the food will get 100g per meal. It used to be 80g, she can now eat 20g more!"
+      ]
+    }
+  ]
+}

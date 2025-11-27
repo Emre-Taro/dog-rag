@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       let responseMessage = 'RAG endpoint not configured';
       if (body.weeklyData && body.weeklyData.weeks) {
         const weeksCount = body.weeklyData.weeks.length;
-        responseMessage = `RAG endpoint not configured. ${weeksCount}週分のデータが提供されましたが、RAGサービスが設定されていないため処理できません。`;
+        responseMessage = `RAG endpoint not configured. ${weeksCount} weeks of data were provided, but the RAG service is not configured and cannot be processed.`;
       }
       return NextResponse.json(
         {
@@ -31,28 +31,28 @@ export async function POST(req: Request) {
     // Format weekly data for RAG context if provided
     let ragContext = '';
     if (body.weeklyData && body.weeklyData.weeks) {
-      ragContext = '\n\n=== 週間サマリーデータ ===\n';
+      ragContext = '\n\n=== Weekly Summary Data ===\n';
       body.weeklyData.weeks.forEach((week: any, index: number) => {
-        ragContext += `\n【週 ${index + 1}: ${week.weekStart} 〜 ${week.weekEnd}】\n`;
-        ragContext += `要約: ${week.summaryText || '要約なし'}\n`;
+        ragContext += `\n[Week ${index + 1}: ${week.weekStart} ~ ${week.weekEnd}]\n`;
+        ragContext += `Summary: ${week.summaryText || 'No summary'}\n`;
         if (week.timelineJson && week.timelineJson.entries) {
-          ragContext += `テキストエントリ数: ${week.timelineJson.entries.length}\n`;
-          // 最初の数件のテキストエントリをサンプルとして含める
+          ragContext += `Text entries: ${week.timelineJson.entries.length}\n`;
+          // Include first few text entries as samples
           const sampleEntries = week.timelineJson.entries.slice(0, 3);
           sampleEntries.forEach((entry: any) => {
             ragContext += `- [${entry.category}] ${entry.content.substring(0, 50)}...\n`;
           });
         }
       });
-      ragContext += '\n=== データ終了 ===\n';
+      ragContext += '\n=== End of Data ===\n';
     }
 
     // Forward to external Python RAG service (if configured)
     const requestBody = {
       prompt: body.prompt,
       dogId: body.dogId,
-      context: ragContext, // 週間データをコンテキストとして追加
-      weeklyData: body.weeklyData, // 完全なデータも送信（必要に応じて）
+      context: ragContext, // Add weekly data as context
+      weeklyData: body.weeklyData, // Also send complete data (if needed)
     };
 
     const resp = await fetch(RAG_API_URL, {

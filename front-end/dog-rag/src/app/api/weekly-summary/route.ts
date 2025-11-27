@@ -4,6 +4,7 @@ import { buildWeeklyDataForRange } from '@/lib/weeklySummary/buildWeeklyData'
 import { prisma } from '@/lib/weeklySummary/weeklySummary'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
+import { indexInternalCorpus } from '@/lib/rag/internalIndex'
 
 /**
  * GET /api/weekly-summary
@@ -120,6 +121,18 @@ export async function GET(req: Request) {
       startDate,
       endDate,
     })
+
+    // Automatically index internal corpus for RAG (run in background, don't wait)
+    indexInternalCorpus({
+      dogId,
+      startDate,
+      endDate,
+    }).then(indexResult => {
+      console.log(`[weekly-summary] Auto-indexed ${indexResult.weeksIndexed} weeks, ${indexResult.totalChunks} chunks for dog ${dogId}`);
+    }).catch(error => {
+      console.error('[weekly-summary] Error auto-indexing internal corpus:', error);
+      // Don't fail the request if indexing fails
+    });
 
     const responseData = {
       dogId,

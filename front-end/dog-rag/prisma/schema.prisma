@@ -40,7 +40,7 @@ model DogNote {
 }
 
 model DogProfile {
-  id              Int           @id @default(autoincrement())
+  id              Int              @id @default(autoincrement())
   ownerId         Int
   dogName         String
   age             Int?
@@ -49,21 +49,21 @@ model DogProfile {
   breed           String?
   personality     String?
   stageOfTraining TrainingStage
-  createdAt       DateTime      @default(now())
+  createdAt       DateTime         @default(now())
   updatedAt       DateTime
-  gender          String?       @default("MALE")
+  gender          String?          @default("MALE")
   BarkLog         BarkLog[]
   CustomLog       CustomLog[]
   DogNote         DogNote[]
-  User            User          @relation(fields: [ownerId], references: [id])
+  User            User             @relation(fields: [ownerId], references: [id])
+  weekSummaries   DogWeekSummary[]
+  weekTexts       DogWeekText[]
   FoodLog         FoodLog[]
   PlayLog         PlayLog[]
   SleepLog        SleepLog[]
   ToiletLog       ToiletLog[]
   WalkLog         WalkLog[]
-
-  weekSummaries   DogWeekSummary[]
-  weekTexts       DogWeekText[]
+  RagMessage      RagMessage[]
 }
 
 model FoodLog {
@@ -119,6 +119,7 @@ model User {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime
   DogProfile     DogProfile[]
+  RagMessage     RagMessage[]
 }
 
 model WalkLog {
@@ -131,6 +132,94 @@ model WalkLog {
   comment    String?
   createdAt  DateTime   @default(now())
   DogProfile DogProfile @relation(fields: [dogId], references: [id])
+}
+
+model DogWeekSummary {
+  id              Int        @id @default(autoincrement())
+  dogId           Int
+  /// 週の開始・終了（日付）
+  weekStart       DateTime   @map("week_start")
+  weekEnd         DateTime   @map("week_end")
+  /// 1日の one/two の頻度の週平均（割合なら本当は Decimal 推奨だけど、とりあえず Int のまま）
+  avgOneFreqDay   Int?       @map("avg_one_freq_day")
+  avgTwoFreqDay   Int?       @map("avg_two_freq_day")
+  toiletFailRate  Decimal?   @map("toilet_fail_rate")
+  avgFood         Int?       @map("avg_food")
+  avgWalkMinutes  Int?       @map("avg_walk_minutes")
+  avgWalkDistance Int?       @map("avg_walk_distance")
+  avgSleepHour    Int?       @map("avg_sleep_hour")
+  barkNightCount  Int?       @map("bark_night_count")
+  summaryJson     Json?      @map("summary_json")
+  summaryText     String?    @map("summary_text")
+  createdAt       DateTime   @default(now()) @map("createdAt")
+  updatedAt       DateTime   @default(now()) @map("updatedAt")
+  dog             DogProfile @relation(fields: [dogId], references: [id])
+
+  @@unique([dogId, weekStart, weekEnd], name: "uq_dog_week")
+  @@map("DogWeekSummary")
+}
+
+model DogWeekText {
+  id           Int        @id @default(autoincrement())
+  dogId        Int
+  weekStart    DateTime   @map("week_start")
+  weekEnd      DateTime   @map("week_end")
+  eventAt      DateTime   @map("event_at")
+  /// 'toilet', 'food', 'walk', 'play', 'sleep', 'bark', 'custom', 'note'
+  category     String
+  sourceTable  String     @map("source_table")
+  sourceId     Int?       @map("source_id")
+  title        String?
+  content      String
+  metadataJson Json?      @map("metadata_json")
+  createdAt    DateTime   @default(now()) @map("createdAt")
+  dog          DogProfile @relation(fields: [dogId], references: [id])
+
+  @@map("DogWeekText")
+}
+
+model Document {
+  id         BigInt   @id @default(autoincrement())
+  title      String?
+  sourcePath String?  @map("source_path")
+  createdAt  DateTime @default(now()) @map("created_at")
+  chunks     Chunk[]
+
+  @@index([sourcePath], map: "idx_documents_source_path")
+  @@map("documents")
+}
+
+model Chunk {
+  id         BigInt                 @id @default(autoincrement())
+  documentId BigInt                 @map("document_id")
+  content    String
+  embedding  Unsupported("vector")?
+  metadata   Json?
+  createdAt  DateTime?              @default(now()) @map("created_at") @db.Timestamptz(6)
+  document   Document               @relation(fields: [documentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([documentId], map: "idx_chunks_document_id")
+  @@index([embedding], map: "idx_chunks_embedding")
+  @@index([metadata], map: "idx_chunks_metadata", type: Gin)
+  @@map("chunks")
+}
+
+model RagMessage {
+  id         Int        @id @default(autoincrement())
+  userId     Int
+  dogId      Int
+  role       RagRole
+  content    String     @db.Text
+  timestamp  DateTime   @default(now())
+  evaluation RagEvaluation?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  User       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  DogProfile DogProfile @relation(fields: [dogId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dogId, timestamp])
+  @@index([dogId, timestamp])
+  @@map("RagMessage")
 }
 
 enum DayPeriod {
@@ -205,63 +294,12 @@ enum gender {
   FEMALE
 }
 
-
-// for RAG
-
-model DogWeekSummary {
-  id      Int  @id @default(autoincrement())
-  dogId   Int
-
-  /// 週の開始・終了（日付）
-  weekStart DateTime @map("week_start")
-  weekEnd   DateTime @map("week_end")
-
-  /// 1日の one/two の頻度の週平均（割合なら本当は Decimal 推奨だけど、とりあえず Int のまま）
-  avgOneFreqDay Int? @map("avg_one_freq_day")
-  avgTwoFreqDay Int? @map("avg_two_freq_day")
-
-  toiletFailRate Decimal? @map("toilet_fail_rate")
-  avgFood        Int?     @map("avg_food")
-  avgWalkMinutes Int?     @map("avg_walk_minutes")
-  avgWalkDistance Int?    @map("avg_walk_distance")
-  avgSleepHour   Int?     @map("avg_sleep_hour")
-  barkNightCount Int?     @map("bark_night_count")
-
-  summaryJson Json?   @map("summary_json")
-  summaryText String? @map("summary_text")
-
-  createdAt  DateTime @default(now()) @map("createdAt")
-  updatedAt  DateTime @default(now()) @map("updatedAt")
-
-  // Relations（db pull 済みの DogProfile に紐づけ）
-  dog DogProfile @relation(fields: [dogId], references: [id])
-
-  @@unique([dogId, weekStart, weekEnd], name: "uq_dog_week")
-  @@map("DogWeekSummary")
+enum RagRole {
+  user
+  assistant
 }
 
-model DogWeekText {
-  id    Int @id @default(autoincrement())
-  dogId Int
-
-  weekStart DateTime @map("week_start")
-  weekEnd   DateTime @map("week_end")
-
-  eventAt   DateTime @map("event_at")
-
-  /// 'toilet', 'food', 'walk', 'play', 'sleep', 'bark', 'custom', 'note'
-  category    String
-  sourceTable String  @map("source_table")
-  sourceId    Int?    @map("source_id")
-
-  title   String?
-  content String
-
-  metadataJson Json? @map("metadata_json")
-
-  createdAt DateTime @default(now()) @map("createdAt")
-
-  dog DogProfile @relation(fields: [dogId], references: [id])
-
-  @@map("DogWeekText")
+enum RagEvaluation {
+  good
+  bad
 }

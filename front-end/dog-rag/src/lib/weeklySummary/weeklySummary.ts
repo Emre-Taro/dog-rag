@@ -5,12 +5,26 @@ import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { formatWeeklySummaryText } from './summaryText'
 
-// PostgreSQL 用のコネクションプール
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-})
+// PostgreSQL connection pool
+// Enable SSL for AWS RDS connections
+const connectionString = process.env.DATABASE_URL || '';
+const poolConfig: any = {
+  connectionString,
+};
 
-// Prisma 用の adapter を作成
+// If connecting to AWS RDS, enable SSL
+if (connectionString.includes('rds.amazonaws.com') || connectionString.includes('amazonaws.com')) {
+  // If SSL is not already specified in the connection string, add it
+  if (!connectionString.includes('sslmode=') && !connectionString.includes('ssl=')) {
+    poolConfig.ssl = {
+      rejectUnauthorized: false, // AWS RDS uses self-signed certificates
+    };
+  }
+}
+
+const pool = new Pool(poolConfig)
+
+// Create Prisma adapter
 const adapter = new PrismaPg(pool)
 
 // Singleton pattern for PrismaClient
@@ -21,7 +35,7 @@ const globalForPrisma = globalThis as unknown as {
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    adapter, // ← これが今回のキモ
+    adapter, // This is the key part
   })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
@@ -72,7 +86,7 @@ export async function buildWeeklySummaryForDog(params: {
 }> {
   const { dogId, weekStart, weekEnd } = params;
 
-  // 犬の名前を取得
+  // Get dog name
   const dogProfile = await prisma.dogProfile.findUnique({
     where: { id: dogId },
     select: { dogName: true },
@@ -303,7 +317,7 @@ export async function buildWeeklySummaryForDog(params: {
     },
   };
 
-  // 自然言語の要約文章を生成
+  // Generate natural language summary text
   const summaryText = formatWeeklySummaryText(dogProfile.dogName, weeklyJson);
 
   // Upsert DogWeekSummary
@@ -328,7 +342,7 @@ export async function buildWeeklySummaryForDog(params: {
       avgSleepHour: avgSleepHour !== null ? Math.round(avgSleepHour) : null,
       barkNightCount,
       summaryJson: weeklyJson as any, // Prisma Json type
-      summaryText: summaryText, // 自然言語の要約文章
+      summaryText: summaryText, // Natural language summary text
       updatedAt: new Date(),
     },
     update: {
@@ -341,7 +355,7 @@ export async function buildWeeklySummaryForDog(params: {
       avgSleepHour: avgSleepHour !== null ? Math.round(avgSleepHour) : null,
       barkNightCount,
       summaryJson: weeklyJson as any, // Prisma Json type
-      summaryText: summaryText, // 自然言語の要約文章
+      summaryText: summaryText, // Natural language summary text
       updatedAt: new Date(),
     },
   });
