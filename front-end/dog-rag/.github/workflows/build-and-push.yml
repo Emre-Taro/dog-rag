@@ -3,11 +3,16 @@ name: Build and Push Docker Image to ECR
 on:
   push:
     branches:
-      - main  # デフォルトブランチ名に合わせて必要なら変更
+      - main
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+
+    # ★ ここを追加：run の作業ディレクトリを指定
+    defaults:
+      run:
+        working-directory: front-end/dog-rag
 
     steps:
       - name: Checkout source
