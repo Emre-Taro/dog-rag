@@ -4,11 +4,11 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-# Prisma Client を生成するステージ
+# Prisma Client 生成用ステージ
 FROM node:20-alpine AS prisma
 WORKDIR /app
-COPY prisma ./prisma
 COPY package*.json ./
+COPY prisma ./prisma
 RUN npm ci
 RUN npx prisma generate
 
@@ -16,11 +16,16 @@ RUN npx prisma generate
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# 依存関係
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=prisma /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=prisma /app/prisma ./prisma
+
+# ✅ ここを修正：.prisma ではなく generated をコピー
+COPY --from=prisma /app/generated ./generated
+
+# アプリ本体
 COPY . .
 
+# Next.js ビルド
 RUN npm run build
 
 # 実行ステージ
