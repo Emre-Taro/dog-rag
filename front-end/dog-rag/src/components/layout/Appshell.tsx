@@ -18,7 +18,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="flex flex-1 flex-col overflow-hidden bg-slate-950">
           {/* ヘッダー */}
           <header className="flex shrink-0 items-center justify-between border-b border-slate-800 px-8 py-4">
-            <div className="text-sm text-slate-400">ペットの健康状態を一元管理</div>
+            <div className="text-sm text-slate-400">centralized pet health management tool</div>
             <div className="flex items-center gap-4">
               {selectedDog && (
                 <button className="rounded-full bg-slate-800 px-4 py-1 text-xs text-slate-200">

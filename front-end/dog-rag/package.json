@@ -8,6 +8,7 @@
     "start": "next start -p 3000 -H 0.0.0.0",
     "lint": "eslint",
     "generate-weekly-summaries": "tsx scripts/generate-weekly-summaries.ts",
+    "fix-vector-index": "tsx scripts/fix-vector-index.ts",
     "index-rag:internal": "tsx scripts/index-rag-internal.ts",
     "index-rag:external": "tsx scripts/index-rag-external.ts",
     "index-rag": "npm run index-rag:internal && npm run index-rag:external"
